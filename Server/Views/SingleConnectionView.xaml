@@ -1,0 +1,84 @@
+﻿<Window x:Class="Server.Views.SingleConnectionView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Server"
+        mc:Ignorable="d"
+        Title="SingleConnectionView" Height="500" Width="800">
+    <Window.Resources>
+        <local:StringToVisibilityConverter x:Key="stringToVisibilityConverter" />
+    </Window.Resources>
+    <Grid>
+        <!-- Основное содержимое -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="4*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Column 1 with separator -->
+            <Border Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,0">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="IP сервера"/>
+                    <TextBox Style="{StaticResource TextBoxStyle}" Text="{Binding TCPServerService.ServerAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" FontSize="14"/>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="Порт сервера"/>
+                    <TextBox Style="{StaticResource TextBoxStyle}" Text="{Binding TCPServerService.ServerPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" FontSize="14"/>
+                    <Button Command="{Binding StartServerCommand}" Margin="10" FontSize="14" Content="Включить" Style="{StaticResource PrimaryButtonStyle}"/>
+                    <Button Command="{Binding StopServerCommand}" Margin="10" FontSize="14" Content="Отключить" Style="{StaticResource PrimaryButtonStyle}"/>
+                    <Button Command="{Binding OpenFileCommand}" Margin="10" FontSize="14" Content="Выбрать файл" Style="{StaticResource PrimaryButtonStyle}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Column 2 with separator -->
+            <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="0,0,1,0">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="10" FontSize="14" Text="{Binding TCPServerService.ConnectionStatus}"/>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="10" FontSize="14" Text="Подключенный клиент"/>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="10" FontSize="14" Text="Клиент"/>
+                        <TextBlock HorizontalAlignment="Center" Margin="10" FontSize="14" Text="{Binding TCPServerService.ClientAddress}"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="10" Text="Сообщение об ошибке" FontSize="14"/>
+                        <TextBox Margin="10" Text="{Binding TCPServerService.ErrorMessage}" TextWrapping="Wrap" IsReadOnly="True" FontSize="14" VerticalScrollBarVisibility="Auto" AcceptsReturn="True"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Column 3 (no separator needed) -->
+            <StackPanel Grid.Column="2">
+                <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="10" Text="Данные из файла" FontSize="14"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="Id: "/>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding TCPServerService.Message.Id}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="Text: "/>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding TCPServerService.Message.Text}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="From: "/>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding TCPServerService.Message.From}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="To: "/>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding TCPServerService.Message.To}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="FormatVersion: "/>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding TCPServerService.Message.FormatVersion}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="Color: "/>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding TCPServerService.Message.Color}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="Image: "/>
+                    <Image Width="200" Height="200" Source="{Binding TCPServerService.Message.ImagePath}"/>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

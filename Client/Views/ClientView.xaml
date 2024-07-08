@@ -1,0 +1,63 @@
+﻿<Window x:Class="Client.Views.ClientView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Client"
+        mc:Ignorable="d"
+        Title="ClientView" Height="450" Width="800">
+    <Window.Resources>
+        <local:StringToVisibilityConverter x:Key="stringToVisibilityConverter" />
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="2*"/>
+        </Grid.ColumnDefinitions>
+        <Border Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,0">
+            <StackPanel>
+                <TextBlock Style="{StaticResource TextBlockStyle}" Text="IP сервера"/>
+                <TextBox Style="{StaticResource TextBoxStyle}" Text="{Binding TcpClientService.ServerAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Style="{StaticResource TextBlockStyle}" Text="Порт сервера"/>
+                <TextBox Style="{StaticResource TextBoxStyle}" Text="{Binding TcpClientService.ServerPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                <Button Command="{Binding StartClientCommand}" Margin="10" FontSize="14" Content="Подключиться" Style="{StaticResource PrimaryButtonStyle}"/>
+                <Button Command="{Binding StopClientCommand}" Margin="10" FontSize="14" Content="Отключиться" Style="{StaticResource PrimaryButtonStyle}"/>
+                <Button Command="{Binding RequestResendCommand}" Margin="10" FontSize="14" Content="Повторный запрос" Style="{StaticResource PrimaryButtonStyle}"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="0,0,1,0">
+            <StackPanel Grid.Column="2">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="Статус"/>
+                    <TextBlock Text="{Binding TcpClientService.ConnectionStatus}" HorizontalAlignment="Center" Margin="10" FontSize="14"/>
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="Ошибка"/>
+                    <TextBlock Text="{Binding TcpClientService.ErrorMessage}" HorizontalAlignment="Center" TextWrapping="Wrap" Margin="10" FontSize="14"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Column="2" Margin="10">
+            <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Text="Сообщение"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Style="{StaticResource TextBlockStyle}" Text="From: "/>
+                <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding TcpClientService.Message.From}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Style="{StaticResource TextBlockStyle}" Text="Дата отправки: "/>
+                <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding TcpClientService.Message.Time}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Style="{StaticResource TextBlockStyle}" Text="Текст: "/>
+                <TextBlock Margin="10" FontSize="14" Background="{Binding TcpClientService.Message.Color}" Text="{Binding TcpClientService.Message.Text}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Style="{StaticResource TextBlockStyle}" Text="Картинка: "/>
+                <Image Width="200" Height="200" Source="{Binding TcpClientService.Message.ImagePath}"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>
