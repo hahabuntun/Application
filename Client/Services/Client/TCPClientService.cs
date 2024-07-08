@@ -82,33 +82,30 @@ namespace Client.Services.Client
                             bool isResendRequested = false;
                             ResendCancellationTokenSource = new CancellationTokenSource();
                             CancellationToken resendToken = ResendCancellationTokenSource.Token;
+                            CancellationToken linkedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, resendToken).Token;
                             try
                             {
-                                Message = null;
-                                await Task.Delay(1000);
                                 _logger.LogInformation("Receiving message from server...");
                                 Message = await ReceiveMessage(stream, cancellationToken);
                                 _logger.LogInformation("Message received from server.");
 
-                                CancellationToken linkedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, resendToken).Token;
                                 string discString = await ReceiveDisconnectAsync(stream, linkedCancellationToken);
                                 _logger.LogWarning("Client disconnected by server.");
                                 break;
                             }
-                            catch (OperationCanceledException ex) when (ex.CancellationToken == resendToken)
+                            catch (OperationCanceledException ex) when (resendToken.IsCancellationRequested)
                             {
+                                Message = null;
+                                await Task.Delay(1000);
                                 _logger.LogWarning("Resend requested");
                                 await SendStringAsync(stream, "resend", cancellationToken);
-                                isResendRequested = true;
                             }
-                            catch (OperationCanceledException ex) when (ex.CancellationToken == cancellationToken)
+                            catch (OperationCanceledException ex) when (cancellationToken.IsCancellationRequested)
                             {
-                                if (!isResendRequested)
-                                {
                                     _logger.LogWarning("Disconnection requested.");
                                     await SendStringAsync(stream, "disconnect", CancellationToken.None);
                                     break;
-                                }   
+                                
                             }
                         }
                     }
