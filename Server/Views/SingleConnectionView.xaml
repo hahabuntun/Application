@@ -8,6 +8,7 @@
         Title="SingleConnectionView" Height="500" Width="800">
     <Window.Resources>
         <local:StringToVisibilityConverter x:Key="stringToVisibilityConverter" />
+        <local:BooleanToColorConverter x:Key="booleanToColorConverter" />
         <local:BooleanToVisibilityConverter x:Key="booleanToVisibilityConverter" />
     </Window.Resources>
     <Grid>
@@ -35,18 +36,19 @@
             <!-- Column 2 with separator -->
             <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="0,0,1,0">
                 <StackPanel>
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
                         <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="10" FontSize="14" Text="Статус"/>
                         <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="10" FontSize="14" Text="{Binding TCPServerService.ConnectionStatus}"/>
                         <Ellipse Width="10" Height="10" Margin="5,0,0,0"
                             Fill="{Binding TCPServerService.IsClientConnected, Converter={StaticResource booleanToColorConverter}}" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="10" FontSize="14" Text="Подключенный клиент"/>
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="10" FontSize="14" Text="Клиент"/>
-                        <TextBlock HorizontalAlignment="Center" Margin="10" FontSize="14" Text="{Binding TCPServerService.ClientAddress}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="5,10,5,10" FontSize="14" Text="Клиент"/>
+                        <TextBlock HorizontalAlignment="Center" Margin="5,10,5,10" FontSize="14" Text="{Binding TCPServerService.ClientAddress}"/>
+                        <TextBlock HorizontalAlignment="Center" Margin="5,10,5,10" FontSize="14" Text="{Binding TCPServerService.ClientPort}"/>
                     </StackPanel>
-                    <StackPanel>
+                    <StackPanel Visibility="{Binding TCPServerService.ErrorMessage, Converter={StaticResource stringToVisibilityConverter}}">
                         <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="10" Text="Сообщение об ошибке" FontSize="14"/>
                         <TextBox Margin="10" Text="{Binding TCPServerService.ErrorMessage}" TextWrapping="Wrap" IsReadOnly="True" FontSize="14" VerticalScrollBarVisibility="Auto" AcceptsReturn="True"/>
                     </StackPanel>

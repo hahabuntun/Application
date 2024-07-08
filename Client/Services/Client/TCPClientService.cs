@@ -19,7 +19,7 @@ namespace Client.Services.Client
         private string _clientAddress;
         private int _clientPort;
         private bool _isConnected;
-        private string _connectionStatus;
+        private string _connectionStatus = "Not Connected";
         private string _errorMessage;
         private Message _message;
         public string ServerAddress { get => _serverAddress; set { _serverAddress = value; OnPropertyChanged(); } }

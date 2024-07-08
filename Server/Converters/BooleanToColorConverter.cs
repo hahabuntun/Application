@@ -1,20 +1,23 @@
-﻿
+
 
 using System.Globalization;
-using System.Windows;
 using System.Windows.Data;
+using System.Windows.Media;
 
-namespace Client
+namespace Server
 {
-    public class StringToVisibilityConverter : IValueConverter
+    public class BooleanToColorConverter: IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            string strValue = value as string;
-            if (!string.IsNullOrEmpty(strValue))
-                return Visibility.Visible;
+            if (value is bool && (bool)value)
+            {
+                return Brushes.Green; // Зеленый цвет, если true
+            }
             else
-                return Visibility.Collapsed;
+            {
+                return Brushes.Red;   // Красный цвет, если false
+            }
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
