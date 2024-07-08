@@ -8,13 +8,14 @@
         Title="SingleConnectionView" Height="500" Width="800">
     <Window.Resources>
         <local:StringToVisibilityConverter x:Key="stringToVisibilityConverter" />
+        <local:BooleanToVisibilityConverter x:Key="booleanToVisibilityConverter" />
     </Window.Resources>
     <Grid>
         <!-- Основное содержимое -->
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"/>
-                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="3*"/>
                 <ColumnDefinition Width="4*"/>
             </Grid.ColumnDefinitions>
 
@@ -34,7 +35,12 @@
             <!-- Column 2 with separator -->
             <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="0,0,1,0">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="10" FontSize="14" Text="{Binding TCPServerService.ConnectionStatus}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="10" FontSize="14" Text="Статус"/>
+                        <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="10" FontSize="14" Text="{Binding TCPServerService.ConnectionStatus}"/>
+                        <Ellipse Width="10" Height="10" Margin="5,0,0,0"
+                            Fill="{Binding TCPServerService.IsClientConnected, Converter={StaticResource booleanToColorConverter}}" />
+                    </StackPanel>
                     <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="10" FontSize="14" Text="Подключенный клиент"/>
                     <StackPanel>
                         <TextBlock Style="{StaticResource TextBlockStyle}" HorizontalAlignment="Center" Margin="10" FontSize="14" Text="Клиент"/>
@@ -56,7 +62,7 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="Text: "/>
-                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding TCPServerService.Message.Text}"/>
+                    <TextBlock Background="{Binding TCPServerService.Message.Color}" Style="{StaticResource TextBlockStyle}" Text="{Binding TCPServerService.Message.Text}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="From: "/>

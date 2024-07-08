@@ -3,6 +3,7 @@ using Server.Commands;
 using Server.Models;
 using Server.Services.Server;
 using System.IO;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Xml;
 
@@ -59,6 +60,7 @@ namespace Server.ViewModels
         {
             try
             {
+                _tcpServerService.ErrorMessage = "";
                 Message fileData = null;
 
                 XmlDocument xmlDoc = new XmlDocument();
@@ -68,27 +70,57 @@ namespace Server.ViewModels
 
                 if (messageNode != null)
                 {
-                    fileData = new Message();
-                    fileData.FormatVersion = messageNode.SelectSingleNode("FormatVersion")?.InnerText;
-                    fileData.From = messageNode.SelectSingleNode("From")?.InnerText;
-                    fileData.To = messageNode.SelectSingleNode("To")?.InnerText;
-                    fileData.Id = int.Parse(messageNode.SelectSingleNode("Id")?.InnerText ?? "0");
-                    fileData.Color = messageNode.SelectSingleNode("Color")?.InnerText;
-                    fileData.Text = messageNode.SelectSingleNode("Text")?.InnerText;
-
-
-                    string imagePath = messageNode.SelectSingleNode("ImagePath")?.InnerText;
-                    fileData.ImagePath = imagePath;
-                    if (!string.IsNullOrEmpty(imagePath) && File.Exists(imagePath))
+                    string? formatVersion = messageNode.SelectSingleNode("FormatVersion")?.InnerText;
+                    string? from = messageNode.SelectSingleNode("From")?.InnerText;
+                    string? to = messageNode.SelectSingleNode("To")?.InnerText;
+                    string? color = messageNode.SelectSingleNode("Color")?.InnerText;
+                    string? text = messageNode.SelectSingleNode("Text")?.InnerText;
+                    string? imagePath = messageNode.SelectSingleNode("ImagePath")?.InnerText;
+                    
+                    if (string.IsNullOrEmpty(formatVersion) ||
+                        string.IsNullOrEmpty(from) || 
+                        string.IsNullOrEmpty(to) || 
+                        string.IsNullOrEmpty(color) ||
+                        string.IsNullOrEmpty(text) ||
+                        string.IsNullOrEmpty(imagePath))
                     {
-                        fileData.ImageBytes = await File.ReadAllBytesAsync(imagePath, _tokenSource.Token);
+                        TCPServerService.ErrorMessage = "Не все обязательные поля заполнены в файле.";
+                        return;
                     }
+
+
+                    if (!int.TryParse(messageNode.SelectSingleNode("Id")?.InnerText, out int id))
+                    {
+                        TCPServerService.ErrorMessage = "Не удалось преобразовать поле 'Id' в числовое значение.";
+                        return; // Возвращаем, если не удалось преобразовать Id
+                    }
+
+
+                    if (!File.Exists(imagePath))
+                    {
+                        TCPServerService.ErrorMessage = "Неверный путь к картинке";
+                        return;
+                        
+                    }
+                    byte[] imageBytes = await File.ReadAllBytesAsync(imagePath, _tokenSource.Token);
+                    fileData = new Message()
+                    {
+                        Id = id,
+                        FormatVersion = formatVersion,
+                        From = from,
+                        To = to,
+                        Color = color,
+                        Text = text,
+                        ImagePath = imagePath,
+                        ImageBytes = imageBytes
+                    };
+                    
                     TCPServerService.Message = fileData;
                 }
             }
             catch (Exception ex)
             {
-                throw;
+                TCPServerService.ErrorMessage = ex.Message;
             }
 
         }

@@ -11,9 +11,9 @@
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*"/>
-            <ColumnDefinition Width="1*"/>
             <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="4*"/>
         </Grid.ColumnDefinitions>
         <Border Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,0">
             <StackPanel>
@@ -29,12 +29,12 @@
 
         <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="0,0,1,0">
             <StackPanel Grid.Column="2">
-                <StackPanel>
+                <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="Статус"/>
                     <TextBlock Text="{Binding TcpClientService.ConnectionStatus}" HorizontalAlignment="Center" Margin="10" FontSize="14"/>
                 </StackPanel>
                 <StackPanel>
-                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="Ошибка"/>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="Сообщение об ошибке"/>
                     <TextBlock Text="{Binding TcpClientService.ErrorMessage}" HorizontalAlignment="Center" TextWrapping="Wrap" Margin="10" FontSize="14"/>
                 </StackPanel>
             </StackPanel>
