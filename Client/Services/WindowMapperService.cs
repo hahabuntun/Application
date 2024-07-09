@@ -11,6 +11,7 @@ namespace Client.Services
         public WindowMapperService()
         {
             RegisterMapping<ClientViewModel, ClientView>();
+            RegisterMapping<AllMessagesViewModel, AllMessagesView>();
         }
         public void RegisterMapping<TViewModel, TWindow>() where TViewModel : ViewModelBase where TWindow : Window
         {

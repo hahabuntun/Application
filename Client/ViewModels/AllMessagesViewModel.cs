@@ -1,32 +1,23 @@
 ﻿
-
-using Server.Models;
-using Server.Services.Server;
+using Client.Models;
+using Client.Services.Client;
 using System.Collections.ObjectModel;
 
-
-namespace Server.ViewModels
+namespace Client.ViewModels
 {
-    /// <summary>
-    /// Отображает все сообщения за одну пользовательскую сессию
-    /// </summary>
     public class AllMessagesViewModel : ViewModelBase
     {
-        public ITCPServerService TCPServerService { get; set; }
+        public ITCPClientService TCPClientService { get; set; }
         public ObservableCollection<StoredMessage> _allMessages = new ObservableCollection<StoredMessage>();
         public ObservableCollection<StoredMessage> AllMessages { get => _allMessages; }
         public void AddMessage(Message message)
         {
             StoredMessage mes = new StoredMessage()
             {
-                ServerAddress = TCPServerService.ServerAddress,
-                ClientAddress = TCPServerService.ClientAddress,
-                ServerPort = TCPServerService.ServerPort,
-                ClientPort = TCPServerService.ClientPort,
-                Id = message.Id,
-                FormatVersion = message.FormatVersion,
+                ServerAddress = TCPClientService.ServerAddress,
+                ServerPort = TCPClientService.ServerPort,
+                Time = message.Time,
                 From = message.From,
-                To = message.To,
                 Color = message.Color,
                 Text = message.Text,
                 ImagePath = message.ImagePath
@@ -42,7 +33,6 @@ namespace Server.ViewModels
         }
         private StoredMessage _selectedMessage;
 
-       
         public StoredMessage SelectedMessage
         {
             get { return _selectedMessage; }
@@ -52,7 +42,5 @@ namespace Server.ViewModels
                 OnPropertyChanged();
             }
         }
-
     }
-
 }

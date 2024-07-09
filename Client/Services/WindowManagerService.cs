@@ -21,6 +21,10 @@ namespace Client.Services
             {
                 clientViewModel.ClearResources();
             }
+            else if(window.DataContext is AllMessagesViewModel allMessagesViewModel)
+            {
+                allMessagesViewModel.ClearResources();
+            }
             else
             {
                 return;

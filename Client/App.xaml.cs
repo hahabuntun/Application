@@ -26,6 +26,7 @@ namespace Client
             });
             services.AddSingleton<ClientViewModel>();
             services.AddSingleton<ITCPClientService, TCPClientService>();
+            services.AddSingleton<AllMessagesViewModel>();
 
             services.AddSingleton<ViewModelLocatorService>();
             services.AddSingleton<WindowMapperService>();

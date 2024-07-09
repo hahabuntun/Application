@@ -1,6 +1,7 @@
 ﻿
 
 using Client.Models;
+using System.Collections.ObjectModel;
 using System.Net.Sockets;
 
 namespace Client.Services.Client
@@ -13,10 +14,12 @@ namespace Client.Services.Client
         public int ClientPort { get; set; }
         public bool IsConnected { get; set; }
         public Message Message { get; set; }
+        public event Action<Message> messageReceived;
+
         public string ConnectionStatus { get; set; }
         public string ErrorMessage { get; set; }
+        
         public CancellationTokenSource ResendCancellationTokenSource { get; set; }
-
         public Task StartClientAsync(CancellationToken cancellationToken);
         public Task SendStringAsync(NetworkStream stream, string message, CancellationToken cancellationToken);
         public Task<Message> ReceiveMessage(NetworkStream stream, CancellationToken cancellationToken);

@@ -13,5 +13,6 @@ namespace Client.Services
         }
 
         public ClientViewModel ClientViewModel => _provider.GetRequiredService<ClientViewModel>();
+        public AllMessagesViewModel AllMessagesViewModel => _provider.GetRequiredService<AllMessagesViewModel>();
     }
 }

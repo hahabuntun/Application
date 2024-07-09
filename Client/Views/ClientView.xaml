@@ -26,6 +26,7 @@
                 <Button Command="{Binding StartClientCommand}" Margin="10" FontSize="14" Content="Подключиться" Style="{StaticResource PrimaryButtonStyle}"/>
                 <Button Command="{Binding StopClientCommand}" Margin="10" FontSize="14" Content="Отключиться" Style="{StaticResource PrimaryButtonStyle}"/>
                 <Button Command="{Binding RequestResendCommand}" Margin="10" FontSize="14" Content="Повторный запрос" Style="{StaticResource PrimaryButtonStyle}"/>
+                <Button Command="{Binding OpenAllMessagesCommand}" Margin="10" FontSize="14" Content="Все сообщения" Style="{StaticResource PrimaryButtonStyle}"/>
             </StackPanel>
         </Border>
 

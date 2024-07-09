@@ -1,6 +1,7 @@
 ﻿using Client.Exceptions;
 using Client.Models;
 using Microsoft.Extensions.Logging;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Net;
@@ -31,15 +32,24 @@ namespace Client.Services.Client
         public string ConnectionStatus { get => _connectionStatus; set { _connectionStatus = value; OnPropertyChanged(); } }
         public string ErrorMessage { get => _errorMessage; set { _errorMessage = value; OnPropertyChanged(); } }
         public CancellationTokenSource ResendCancellationTokenSource { get; set; }
+       
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
         public TCPClientService(ILogger<TCPClientService> logger)
         {
             _logger = logger;
         }
+
+        public event Action<Message> messageReceived;
+        public void OnMessageReceived()
+        {
+            messageReceived?.Invoke(Message);
+        }
+
         /// <summary>
         /// Точка входа для связи с сервером
         /// Создается подключение к серверу => принимаются данные от сервера => отправляется запрос на повторную отправку серверу(когда нажата кнопка)
@@ -87,6 +97,7 @@ namespace Client.Services.Client
                             {
                                 _logger.LogInformation("Receiving message from server...");
                                 Message = await ReceiveMessage(stream, cancellationToken);
+                                OnMessageReceived();
                                 _logger.LogInformation("Message received from server.");
 
                                 string discString = await ReceiveDisconnectAsync(stream, linkedCancellationToken);

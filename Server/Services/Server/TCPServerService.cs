@@ -56,26 +56,12 @@ namespace Server.Services.Server
 
         private ObservableCollection<string> _availableAddresses = new ObservableCollection<string>();
         public ObservableCollection<string> AvailableAddresses { get => _availableAddresses; set { _availableAddresses = value; OnPropertyChanged(); } }
-        private ObservableCollection<StoredMessage> _allMessages = new ObservableCollection<StoredMessage>();
-        public ObservableCollection<StoredMessage> AllMessages { get => _allMessages; set { _allMessages = value; OnPropertyChanged(); } }
 
-        public void AddMessage(Message message)
+
+        public event Action<Message> messageSent;
+        public void OnMessageSent()
         {
-            StoredMessage mes = new StoredMessage()
-            {
-                ServerAddress = ServerAddress,
-                ClientAddress = ClientAddress,
-                ServerPort = ServerPort,
-                ClientPort = ClientPort,
-                Id = message.Id,
-                FormatVersion = message.FormatVersion,
-                From = message.From,
-                To = message.To,
-                Color = message.Color,
-                Text = message.Text,
-                ImagePath = message.ImagePath
-            };
-            AllMessages.Add(mes); OnPropertyChanged(nameof(AllMessages));
+            messageSent?.Invoke(Message);
         }
         public void random()
         {
@@ -217,7 +203,7 @@ namespace Server.Services.Server
                         }
                         //Отправляем обработанные данные клиенту
                         await SendMessageAsync(stream, Message, cancellationToken);
-                        AddMessage(Message);
+                        OnMessageSent();
                         _logger.LogInformation("message was sent to the client");
 
                         string clientRequest;
@@ -228,7 +214,7 @@ namespace Server.Services.Server
                             if (clientRequest == "resend")
                             {
                                 await SendMessageAsync(stream, Message, cancellationToken);
-                                AddMessage(Message);
+                                OnMessageSent();
                             }
                             else if (clientRequest == "disconnect")
                             {

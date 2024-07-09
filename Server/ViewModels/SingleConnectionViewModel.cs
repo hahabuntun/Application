@@ -24,9 +24,13 @@ namespace Server.ViewModels
         public ICommand OpenAllMessagesCommand { get; }
         public SingleConnectionViewModel(ITCPServerService tcpServerService, IWindowManagerService windowManagerService, ViewModelLocatorService viewModelLocatorService)
         {
+            
             _windowManagerService = windowManagerService;
             _viewModelLocatorService = viewModelLocatorService;
+            _allMessagesViewModel = _viewModelLocatorService.AllMessagesViewModel;
             _tcpServerService = tcpServerService;
+            _allMessagesViewModel.TCPServerService = _tcpServerService;
+            _tcpServerService.messageSent += _allMessagesViewModel.AddMessage;
             CloseSelfCommand = new RelayCommand(param => CloseSelf());
             StopServerCommand = new RelayCommand(param => StopServer(), (param) => !_tcpServerService.IsServerStopped);
             StartServerCommand = new RelayCommand(param =>  StartServer(), (param) => _tcpServerService.IsServerStopped);
@@ -46,10 +50,7 @@ namespace Server.ViewModels
 
         public void OpenAllMessages()
         {
-            AllMessagesViewModel allMessagesViewModel = _viewModelLocatorService.AllMessagesViewModel;
-            _allMessagesViewModel = allMessagesViewModel;
-            _allMessagesViewModel.TCPServerService = _tcpServerService;
-            _windowManagerService.ShowWindow(allMessagesViewModel);
+            _windowManagerService.ShowWindow(_allMessagesViewModel);
         }
 
         public override void ClearResources()
