@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Message>
+    <FormatVersion>1.0</FormatVersion>
+    <From>sender@example.com</From>
+    <To>receiver@example.com</To>
+    <Id>123</Id>
+    <Color>#FF5733</Color>
+    <Text>Hello, this is a test message.</Text>
+    <ImagePath>C:\Users\User-PC\Desktop\projects\Application\images\img2.jpg</ImagePath>
+</Message>

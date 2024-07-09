@@ -25,6 +25,7 @@ namespace Server
             });
             services.AddSingleton<AllConnectionsViewModel>();
             services.AddTransient<SingleConnectionViewModel>();
+            services.AddTransient<AllMessagesViewModel>();
             services.AddTransient<ITCPServerService, TCPServerService>();
 
             services.AddSingleton<ViewModelLocatorService>();

@@ -12,6 +12,7 @@ namespace Server.Services
         {
             RegisterMapping<AllConnectionsViewModel, AllConnectionsView>();
             RegisterMapping<SingleConnectionViewModel, SingleConnectionView>();
+            RegisterMapping<AllMessagesViewModel, AllMessagesView>();
         }
         public void RegisterMapping<TViewModel, TWindow>() where TViewModel : ViewModelBase where TWindow : Window
         {

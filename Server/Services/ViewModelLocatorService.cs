@@ -14,5 +14,6 @@ namespace Server.Services
 
         public AllConnectionsViewModel AllConnectionsViewModel => _provider.GetRequiredService<AllConnectionsViewModel>();
         public SingleConnectionViewModel SingleConnectionViewModel => _provider.GetRequiredService<SingleConnectionViewModel>();
+        public AllMessagesViewModel AllMessagesViewModel => _provider.GetRequiredService<AllMessagesViewModel>();
     }
 }

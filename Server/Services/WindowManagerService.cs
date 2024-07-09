@@ -30,6 +30,10 @@ namespace Server.Services
             {
                 singleConnectionViewModel.ClearResources();
             }
+            else if(window.DataContext is AllMessagesViewModel allMessagesViewModel)
+            {
+                allMessagesViewModel.ClearResources();
+            }
             else
             {
                 return;

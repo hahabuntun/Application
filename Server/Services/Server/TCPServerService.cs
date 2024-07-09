@@ -1,11 +1,15 @@
 ﻿using Microsoft.Extensions.Logging;
 using Server.Exceptions;
+using Server.Helpers;
 using Server.Models;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Server.Services.Server
 {
@@ -15,6 +19,7 @@ namespace Server.Services.Server
     /// Ожидается подключение клиента => ожидается загрузка сообщения => сообщение отправляется клиентку => по приходе запроса resend осуществляется повторная отправка
     /// По приходе запроса disconnect сервер прослушивает новго клиента
     /// </summary>
+    /// 
     public class TCPServerService : ITCPServerService, INotifyPropertyChanged
     {
         private readonly ILogger<TCPServerService> _logger;
@@ -42,22 +47,73 @@ namespace Server.Services.Server
         public TCPServerService(ILogger<TCPServerService> logger)
         {
             _logger = logger;
+            random();
         }
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public void OnMessageChanged(Message message)
-        {
-            Message = message;
-        }
+        private ObservableCollection<string> _availableAddresses = new ObservableCollection<string>();
+        public ObservableCollection<string> AvailableAddresses { get => _availableAddresses; set { _availableAddresses = value; OnPropertyChanged(); } }
+        private ObservableCollection<StoredMessage> _allMessages = new ObservableCollection<StoredMessage>();
+        public ObservableCollection<StoredMessage> AllMessages { get => _allMessages; set { _allMessages = value; OnPropertyChanged(); } }
 
-
-        public void MessageChangedCallback(Message? message)
+        public void AddMessage(Message message)
         {
-            Message = message;
+            StoredMessage mes = new StoredMessage()
+            {
+                ServerAddress = ServerAddress,
+                ClientAddress = ClientAddress,
+                ServerPort = ServerPort,
+                ClientPort = ClientPort,
+                Id = message.Id,
+                FormatVersion = message.FormatVersion,
+                From = message.From,
+                To = message.To,
+                Color = message.Color,
+                Text = message.Text,
+                ImagePath = message.ImagePath
+            };
+            AllMessages.Add(mes); OnPropertyChanged(nameof(AllMessages));
         }
+        public void random()
+        {
+            List<IPAddress> addresses = new List<IPAddress>();
+
+            // 1. Get all network interfaces
+            NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
+
+            // 2. Iterate through each interface
+            foreach (NetworkInterface networkInterface in interfaces)
+            {
+                // 3. Skip loopback and virtual interfaces
+                if (networkInterface.NetworkInterfaceType == NetworkInterfaceType.Loopback ||
+                    networkInterface.NetworkInterfaceType == NetworkInterfaceType.Tunnel)
+                {
+                    continue;
+                }
+
+                // 4. Get all IP addresses associated with the interface
+                IPInterfaceProperties interfaceProperties = networkInterface.GetIPProperties();
+                UnicastIPAddressInformationCollection ipAddresses = interfaceProperties.UnicastAddresses;
+
+                // 5. Filter addresses:
+                //   - Check if the address is not in the loopback address family
+                //   - Check if the address is not in the link-local address range (169.254.0.0 - 169.254.255.255)
+                addresses.AddRange(ipAddresses.Where(ipAddressInfo =>
+                    ipAddressInfo.Address.AddressFamily != AddressFamily.InterNetworkV6 &&
+                    !ipAddressInfo.Address.IsInRange(IPAddress.Parse("169.254.0.0"), IPAddress.Parse("169.254.255.255"))
+                ).Select(ipAddressInfo => ipAddressInfo.Address));
+            }
+
+            foreach (IPAddress address in addresses)
+            {
+                AvailableAddresses.Add(address.ToString());
+            }
+        }
+        
+
         /// <summary>
         /// Точка входа. Ждет подключения клиентов и начинает их обработку
         /// </summary>
@@ -161,6 +217,7 @@ namespace Server.Services.Server
                         }
                         //Отправляем обработанные данные клиенту
                         await SendMessageAsync(stream, Message, cancellationToken);
+                        AddMessage(Message);
                         _logger.LogInformation("message was sent to the client");
 
                         string clientRequest;
@@ -171,6 +228,7 @@ namespace Server.Services.Server
                             if (clientRequest == "resend")
                             {
                                 await SendMessageAsync(stream, Message, cancellationToken);
+                                AddMessage(Message);
                             }
                             else if (clientRequest == "disconnect")
                             {

@@ -1,9 +1,9 @@
 ﻿using Microsoft.Win32;
 using Server.Commands;
 using Server.Models;
+using Server.Services;
 using Server.Services.Server;
 using System.IO;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Xml;
 
@@ -13,18 +13,25 @@ namespace Server.ViewModels
     {
         private readonly ITCPServerService _tcpServerService;
         private CancellationTokenSource _tokenSource;
+        private readonly IWindowManagerService _windowManagerService;
+        private readonly ViewModelLocatorService _viewModelLocatorService;
+        private AllMessagesViewModel _allMessagesViewModel;
         public ITCPServerService TCPServerService { get => _tcpServerService; }
         public ICommand CloseSelfCommand { get; }
         public ICommand StartServerCommand { get; }
         public ICommand StopServerCommand { get; }
         public ICommand OpenFileCommand { get; }
-        public SingleConnectionViewModel(ITCPServerService tcpServerService)
+        public ICommand OpenAllMessagesCommand { get; }
+        public SingleConnectionViewModel(ITCPServerService tcpServerService, IWindowManagerService windowManagerService, ViewModelLocatorService viewModelLocatorService)
         {
+            _windowManagerService = windowManagerService;
+            _viewModelLocatorService = viewModelLocatorService;
             _tcpServerService = tcpServerService;
             CloseSelfCommand = new RelayCommand(param => CloseSelf());
             StopServerCommand = new RelayCommand(param => StopServer(), (param) => !_tcpServerService.IsServerStopped);
             StartServerCommand = new RelayCommand(param =>  StartServer(), (param) => _tcpServerService.IsServerStopped);
             OpenFileCommand = new RelayCommand(param => OpenFile(), (param) => ((_tcpServerService.IsClientConnected) && (_tcpServerService.Message == null)));
+            OpenAllMessagesCommand = new RelayCommand(param => OpenAllMessages(), (param) => true);
         }
         public void StartServer()
         {
@@ -36,8 +43,18 @@ namespace Server.ViewModels
         {
             _tokenSource?.Cancel();
         }
+
+        public void OpenAllMessages()
+        {
+            AllMessagesViewModel allMessagesViewModel = _viewModelLocatorService.AllMessagesViewModel;
+            _allMessagesViewModel = allMessagesViewModel;
+            _allMessagesViewModel.TCPServerService = _tcpServerService;
+            _windowManagerService.ShowWindow(allMessagesViewModel);
+        }
+
         public override void ClearResources()
         {
+            _allMessagesViewModel?.CloseAction?.Invoke();
             StopServer();
         }
         public void OpenFile()
