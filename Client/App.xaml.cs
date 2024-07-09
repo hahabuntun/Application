@@ -15,10 +15,13 @@ namespace Client
         private readonly IServiceProvider _serviceProvider;
         public App()
         {
+            //Инициализируем логгер
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
+
+            //добавляем сервисы
             services.AddLogging(config =>
             {
                 config.ClearProviders();

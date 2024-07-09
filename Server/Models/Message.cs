@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Server.Models
+﻿namespace Server.Models
 {
+    /// <summary>
+    /// Данные, которые будут отображены на окне связи с клиентом
+    /// </summary>
     public class Message
     {
         public int? Id { get; set; }

@@ -9,7 +9,6 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Server.Services.Server
 {
@@ -22,6 +21,7 @@ namespace Server.Services.Server
     /// 
     public class TCPServerService : ITCPServerService, INotifyPropertyChanged
     {
+        private ObservableCollection<string> _availableAddresses = new ObservableCollection<string>();
         private readonly ILogger<TCPServerService> _logger;
         private string _errorMessage = "";
         private bool _isClientConnected = false;
@@ -31,6 +31,7 @@ namespace Server.Services.Server
         private string _serverAddress;
         private int _serverPort;
         private string _connectionStatus = "Not connected";
+        private Message _message = null;
         public string ConnectionStatus { get => _connectionStatus; set {  _connectionStatus = value; OnPropertyChanged(); } }
         public string ServerAddress { get => _serverAddress; set { _serverAddress = value; OnPropertyChanged(); } }
         public int ServerPort { get => _serverPort; set { _serverPort = value; OnPropertyChanged(); } }
@@ -39,8 +40,8 @@ namespace Server.Services.Server
         public string ErrorMessage { get => _errorMessage; set { _errorMessage = value; OnPropertyChanged(); } }
         public bool IsClientConnected { get => _isClientConnected; set { _isClientConnected = value; OnPropertyChanged(); } }
         public bool IsServerStopped { get => _isServerStopped; set { _isServerStopped = value; OnPropertyChanged(); } }
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private Message _message = null;
+        
+        
         public Message Message { get => _message; set { _message = value; OnPropertyChanged(); } }
 
 
@@ -49,12 +50,7 @@ namespace Server.Services.Server
             _logger = logger;
             random();
         }
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
 
-        private ObservableCollection<string> _availableAddresses = new ObservableCollection<string>();
         public ObservableCollection<string> AvailableAddresses { get => _availableAddresses; set { _availableAddresses = value; OnPropertyChanged(); } }
 
 
@@ -63,6 +59,9 @@ namespace Server.Services.Server
         {
             messageSent?.Invoke(Message);
         }
+        /// <summary>
+        /// Формирует список доступных ip для сервера
+        /// </summary>
         public void random()
         {
             List<IPAddress> addresses = new List<IPAddress>();
@@ -181,61 +180,54 @@ namespace Server.Services.Server
         /// <exception cref="ClientDisconnectedException"></exception>
         public async Task HandleClientAsync(TcpClient client, CancellationToken cancellationToken)
         {
-/*            try
-            {*/
-                IPEndPoint? clientEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
-                ClientAddress = clientEndPoint.Address.ToString();
-                ClientPort = clientEndPoint.Port;
-                using (NetworkStream stream = client.GetStream())
-                {
-                    try
-                    {
-                        //Ждем пока появится сообщение(обработается xml файл)
-                        while (Message == null)
-                        {
-                            //need to make a new Task which listens for clients request to disconnect
-                            //if when the message is not null this task should stop
-                            //if client requests disconnect then we disconnect him
-                            if (cancellationToken.IsCancellationRequested)
-                            {
-                                throw new OperationCanceledException();
-                            }
-                        }
-                        //Отправляем обработанные данные клиенту
-                        await SendMessageAsync(stream, Message, cancellationToken);
-                        OnMessageSent();
-                        _logger.LogInformation("message was sent to the client");
-
-                        string clientRequest;
-                        //ждем запроса на пересылку данных или на выключение
-                        while (!cancellationToken.IsCancellationRequested)
-                        {
-                            clientRequest = await ReceiveStringAsync(stream, cancellationToken);
-                            if (clientRequest == "resend")
-                            {
-                                await SendMessageAsync(stream, Message, cancellationToken);
-                                OnMessageSent();
-                            }
-                            else if (clientRequest == "disconnect")
-                            {
-                                //stream?.Close();
-                                throw new ClientDisconnectedException();
-                            }
-                        }
-                        await SendStringAsync(stream, "disconnect", "", CancellationToken.None);
-                        return;
-                }
-                    catch (OperationCanceledException)
-                    {
-                        await SendStringAsync(stream, "disconnect", "", CancellationToken.None);
-                        return;
-                    }
-                }
-/*            }
-            catch (Exception)
+            IPEndPoint? clientEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
+            ClientAddress = clientEndPoint.Address.ToString();
+            ClientPort = clientEndPoint.Port;
+            using (NetworkStream stream = client.GetStream())
             {
-                throw new ClientDisconnectedException();
-            }*/
+                try
+                {
+                    //Ждем пока появится сообщение(обработается xml файл)
+                    while (Message == null)
+                    {
+                        //need to make a new Task which listens for clients request to disconnect
+                        //if when the message is not null this task should stop
+                        //if client requests disconnect then we disconnect him
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            throw new OperationCanceledException();
+                        }
+                    }
+                    //Отправляем обработанные данные клиенту
+                    await SendMessageAsync(stream, Message, cancellationToken);
+                    OnMessageSent();
+                    _logger.LogInformation("message was sent to the client");
+
+                    string clientRequest;
+                    //ждем запроса на пересылку данных или на выключение
+                    while (!cancellationToken.IsCancellationRequested)
+                    {
+                        clientRequest = await ReceiveStringAsync(stream, cancellationToken);
+                        if (clientRequest == "resend")
+                        {
+                            await SendMessageAsync(stream, Message, cancellationToken);
+                            OnMessageSent();
+                        }
+                        else if (clientRequest == "disconnect")
+                        {
+                            //stream?.Close();
+                            throw new ClientDisconnectedException();
+                        }
+                    }
+                    await SendStringAsync(stream, "disconnect", "", CancellationToken.None);
+                    return;
+                }
+                catch (OperationCanceledException)
+                {
+                    await SendStringAsync(stream, "disconnect", "", CancellationToken.None);
+                    return;
+                }
+            }
         }
         /// <summary>
         /// Проверка валидности адресса и порта сервера. Пока не реализована
@@ -264,24 +256,12 @@ namespace Server.Services.Server
         /// <exception cref="ClientDisconnectedException"></exception>
         public async Task<string> ReceiveStringAsync(NetworkStream stream, CancellationToken cancellationToken)
         {
-/*            try
-            {*/
-                byte[] requestBytes = new byte[1024];
-                string request;
-                int bytesRead;
-                bytesRead = await stream.ReadAsync(requestBytes, 0, requestBytes.Length, cancellationToken);
-                request = Encoding.UTF8.GetString(requestBytes, 0, bytesRead);
-                return request;
-/*            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception)
-            {
-                throw new ClientDisconnectedException();
-            }*/
-
+            byte[] requestBytes = new byte[1024];
+            string request;
+            int bytesRead;
+            bytesRead = await stream.ReadAsync(requestBytes, 0, requestBytes.Length, cancellationToken);
+            request = Encoding.UTF8.GetString(requestBytes, 0, bytesRead);
+            return request;
         }
         /// <summary>
         /// Функция отправки данных клиенту.
@@ -295,34 +275,22 @@ namespace Server.Services.Server
         /// <exception cref="ClientDisconnectedException"></exception>
         public async Task SendMessageAsync(NetworkStream stream, Message message, CancellationToken cancellationToken)
         {
-/*            try
-            {*/
-                if (message.Text != null && message.Text != "")
-                    await SendStringAsync(stream, "is-ready-to-rec", message.Text, cancellationToken);
-                else
-                    await SendStringAsync(stream, "is-ready-to-rec", message.Color, cancellationToken);
-                if (message.Color != null && message.Color != "")
-                    await SendStringAsync(stream, "is-ready-to-rec", message.Color, cancellationToken);
-                else
-                    await SendStringAsync(stream, "is-ready-to-rec", "no-data", cancellationToken);
-                if (message.From != null && message.From != "")
-                    await SendStringAsync(stream, "is-ready-to-rec", message.From, cancellationToken);
-                else
-                    await SendStringAsync(stream, "is-ready-to-rec", "no-data", cancellationToken);
-                if (message.ImageBytes.Length > 0)
-                    await SendImageAsync(stream, message.ImageBytes, cancellationToken);
-                else
-                    await SendStringAsync(stream, "is-ready-to-rec", "no-data", cancellationToken);
-/*            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception)
-            {
-                throw new ClientDisconnectedException();
-            }*/
-
+            if (message.Text != null && message.Text != "")
+                await SendStringAsync(stream, "is-ready-to-rec", message.Text, cancellationToken);
+            else
+                await SendStringAsync(stream, "is-ready-to-rec", message.Color, cancellationToken);
+            if (message.Color != null && message.Color != "")
+                await SendStringAsync(stream, "is-ready-to-rec", message.Color, cancellationToken);
+            else
+                await SendStringAsync(stream, "is-ready-to-rec", "no-data", cancellationToken);
+            if (message.From != null && message.From != "")
+                await SendStringAsync(stream, "is-ready-to-rec", message.From, cancellationToken);
+            else
+                await SendStringAsync(stream, "is-ready-to-rec", "no-data", cancellationToken);
+            if (message.ImageBytes.Length > 0)
+                await SendImageAsync(stream, message.ImageBytes, cancellationToken);
+            else
+                await SendStringAsync(stream, "is-ready-to-rec", "no-data", cancellationToken);
         }
         /// <summary>
         /// Отправка картинки клиенту
@@ -335,32 +303,21 @@ namespace Server.Services.Server
         /// <exception cref="ClientDisconnectedException"></exception>
         public async Task SendImageAsync(NetworkStream stream, byte[] image, CancellationToken cancellationToken)
         {
-/*            try
-            {*/
-                byte[] isReadyBuffer = Encoding.UTF8.GetBytes("messageType: is-ready-to-rec;");
-                await stream.WriteAsync(isReadyBuffer, 0, isReadyBuffer.Length, cancellationToken);
-                string clientResponse = await ReceiveStringAsync(stream, cancellationToken);
-                if (clientResponse == "ready")
-                {
-                    byte[] imageLengthBytes = BitConverter.GetBytes(image.Length);
-                    await stream.WriteAsync(imageLengthBytes, 0, imageLengthBytes.Length, cancellationToken);
-                    await stream.FlushAsync(cancellationToken);
-                    await stream.WriteAsync(image, 0, image.Length, cancellationToken);
-                    await stream.FlushAsync(cancellationToken);
-                }
-                else if (clientResponse == "disconnect")
-                {
-                    throw new ClientDisconnectedException();
-                }
-/*            }
-            catch (OperationCanceledException)
+            byte[] isReadyBuffer = Encoding.UTF8.GetBytes("messageType: is-ready-to-rec;");
+            await stream.WriteAsync(isReadyBuffer, 0, isReadyBuffer.Length, cancellationToken);
+            string clientResponse = await ReceiveStringAsync(stream, cancellationToken);
+            if (clientResponse == "ready")
             {
-                throw;
+                byte[] imageLengthBytes = BitConverter.GetBytes(image.Length);
+                await stream.WriteAsync(imageLengthBytes, 0, imageLengthBytes.Length, cancellationToken);
+                await stream.FlushAsync(cancellationToken);
+                await stream.WriteAsync(image, 0, image.Length, cancellationToken);
+                await stream.FlushAsync(cancellationToken);
             }
-            catch (Exception)
+            else if (clientResponse == "disconnect")
             {
                 throw new ClientDisconnectedException();
-            }*/
+            }
         }
         /// <summary>
         /// Отправка строки клиенту
@@ -374,43 +331,38 @@ namespace Server.Services.Server
         /// <exception cref="ClientDisconnectedException"></exception>
         public async Task SendStringAsync(NetworkStream stream, string messageType, string message, CancellationToken cancellationToken)
         {
-/*            try
-            {*/
-                if (messageType == "is-ready-to-rec")
-                {
-                    byte[] isReadyBuffer = Encoding.UTF8.GetBytes("messageType: is-ready-to-rec;");
-                    byte[] stringBytes = Encoding.UTF8.GetBytes(message);
-                    byte[] lengthBytes = BitConverter.GetBytes(stringBytes.Length);
-
-                    await stream.WriteAsync(isReadyBuffer, 0, isReadyBuffer.Length, cancellationToken);
-
-                    string clientResponse = await ReceiveStringAsync(stream, cancellationToken);
-                    if (clientResponse == "disconnect")
-                    {
-                        throw new ClientDisconnectedException();
-                    }
-                    else
-                    {
-                        await stream.WriteAsync(lengthBytes, 0, lengthBytes.Length, cancellationToken);
-                        await stream.FlushAsync(cancellationToken);
-                        await stream.WriteAsync(stringBytes, 0, stringBytes.Length, cancellationToken);
-                        await stream.FlushAsync(cancellationToken);
-                    }
-                }
-                else if (messageType == "disconnect")
-                {
-                    byte[] disconnectBuffer = Encoding.UTF8.GetBytes("messageType: disconnect;");
-                    await stream.WriteAsync(disconnectBuffer, 0, disconnectBuffer.Length, cancellationToken);
-                }
-/*            }
-            catch (OperationCanceledException)
+            if (messageType == "is-ready-to-rec")
             {
-                throw;
+                byte[] isReadyBuffer = Encoding.UTF8.GetBytes("messageType: is-ready-to-rec;");
+                byte[] stringBytes = Encoding.UTF8.GetBytes(message);
+                byte[] lengthBytes = BitConverter.GetBytes(stringBytes.Length);
+
+                await stream.WriteAsync(isReadyBuffer, 0, isReadyBuffer.Length, cancellationToken);
+
+                string clientResponse = await ReceiveStringAsync(stream, cancellationToken);
+                if (clientResponse == "disconnect")
+                {
+                    throw new ClientDisconnectedException();
+                }
+                else
+                {
+                    await stream.WriteAsync(lengthBytes, 0, lengthBytes.Length, cancellationToken);
+                    await stream.FlushAsync(cancellationToken);
+                    await stream.WriteAsync(stringBytes, 0, stringBytes.Length, cancellationToken);
+                    await stream.FlushAsync(cancellationToken);
+                }
             }
-            catch (Exception)
+            else if (messageType == "disconnect")
             {
-                throw new ClientDisconnectedException();
-            }*/
+                byte[] disconnectBuffer = Encoding.UTF8.GetBytes("messageType: disconnect;");
+                await stream.WriteAsync(disconnectBuffer, 0, disconnectBuffer.Length, cancellationToken);
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

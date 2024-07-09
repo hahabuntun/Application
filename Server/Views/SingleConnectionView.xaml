@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Server"
         mc:Ignorable="d"
-        Title="SingleConnectionView" Height="500" Width="800">
+        Title="Окно соединения" Height="500" Width="800">
     <Window.Resources>
         <local:StringToVisibilityConverter x:Key="stringToVisibilityConverter" />
         <local:BooleanToColorConverter x:Key="booleanToColorConverter" />

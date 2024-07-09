@@ -6,6 +6,9 @@ using System.Windows.Media;
 
 namespace Server
 {
+    /// <summary>
+    /// Преобразует булевое значение в зеленый или красный цвет. Если значение равно true-зеленый, иначе красный
+    /// </summary>
     public class BooleanToColorConverter: IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

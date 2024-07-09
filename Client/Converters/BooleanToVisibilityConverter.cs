@@ -1,10 +1,12 @@
-﻿
-using System.Globalization;
+﻿using System.Globalization;
 using System.Windows.Data;
 using System.Windows;
 
 namespace Client
 {
+    /// <summary>
+    /// Преобразует булевое значение в видимость элемента. Если true - тогда элемент видимый, иначе - невидимый
+    /// </summary>
     public class BooleanToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
