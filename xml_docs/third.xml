@@ -6,5 +6,5 @@
     <Id>123</Id>
     <Color>#FF5733</Color>
     <Text>Hello, this is a test message.</Text>
-    <ImagePath>D:\projects\Application\Application\images\img1.jpg</ImagePath>
+    <ImagePath>D:\projects\Application\Application\images\img3.jpg</ImagePath>
 </Message>

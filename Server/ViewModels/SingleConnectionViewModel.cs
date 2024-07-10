@@ -76,7 +76,7 @@ namespace Server.ViewModels
             _windowManagerService.ShowWindow(_allMessagesViewModel);
         }
 
-
+        public event Action<SingleConnectionViewModel> Closing;
         /// <summary>
         /// Очищение ресурсов окна
         /// </summary>
@@ -85,6 +85,7 @@ namespace Server.ViewModels
             _logger.LogInformation("Очистка ресурсов");
             _allMessagesViewModel?.CloseAction?.Invoke();
             StopServer();
+            Closing(this);
         }
 
 

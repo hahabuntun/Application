@@ -52,6 +52,7 @@ namespace Server.ViewModels
         {
             _logger.LogInformation("Вызвана команда открытия окна соединения");
             SingleConnectionViewModel singleConnectionViewModel =  _viewModelLocatorService.SingleConnectionViewModel;
+            singleConnectionViewModel.Closing += RemoveWindowFromList;
             _windowManagerService.ShowWindow(singleConnectionViewModel);
             SingleConnectionViewModels.Add(singleConnectionViewModel);
         }
@@ -70,6 +71,20 @@ namespace Server.ViewModels
             viewModelToClose.CloseAction?.Invoke(); 
         }
 
+        public void RemoveWindowFromList(SingleConnectionViewModel viewModel)
+        {
+            viewModel.Closing -= RemoveWindowFromList;
+            //если текущий поток является UI потоком
+            if (System.Windows.Application.Current.Dispatcher.CheckAccess())
+            {
+                SingleConnectionViewModels.Remove(viewModel);
+            }
+            //если текущий поток не является UI потоком(во избежание ошибки)
+            else
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() => SingleConnectionViewModels.Remove(viewModel));
+            }
+        }
 
         /// <summary>
         /// Вывод подокна на передний план
