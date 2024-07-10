@@ -17,11 +17,15 @@ namespace Server.ViewModels
         private readonly ViewModelLocatorService _viewModelLocatorService;
         private AllMessagesViewModel _allMessagesViewModel;
         public ITCPServerService TCPServerService { get => _tcpServerService; }
-        public ICommand CloseSelfCommand { get; }
-        public ICommand StartServerCommand { get; }
-        public ICommand StopServerCommand { get; }
-        public ICommand OpenFileCommand { get; }
-        public ICommand OpenAllMessagesCommand { get; }
+
+
+        public ICommand CloseSelfCommand { get; } // команда закрытия себя
+        public ICommand StartServerCommand { get; } //команда старта сервера
+        public ICommand StopServerCommand { get; } //команда остановки сервера
+        public ICommand OpenFileCommand { get; } //команда открытия файла
+        public ICommand OpenAllMessagesCommand { get; } //команда открытия всех сообщений сессии
+
+
         public SingleConnectionViewModel(ITCPServerService tcpServerService, IWindowManagerService windowManagerService, ViewModelLocatorService viewModelLocatorService)
         {
             
@@ -37,27 +41,50 @@ namespace Server.ViewModels
             OpenFileCommand = new RelayCommand(param => OpenFile(), (param) => ((_tcpServerService.IsClientConnected) && (_tcpServerService.Message == null)));
             OpenAllMessagesCommand = new RelayCommand(param => OpenAllMessages(), (param) => true);
         }
+
+
+        /// <summary>
+        /// Начало работы сервера
+        /// </summary>
         public void StartServer()
         {
             _tokenSource = new CancellationTokenSource();
             CancellationToken cancellationToken = _tokenSource.Token;
             Task.Run(() => _tcpServerService.StartServerAsync(cancellationToken), cancellationToken);
         }
+
+
+        /// <summary>
+        /// Остановка работы сервера
+        /// </summary>
         public void StopServer()
         {
             _tokenSource?.Cancel();
         }
 
+
+        /// <summary>
+        /// Открытия окна всех сообщений
+        /// </summary>
         public void OpenAllMessages()
         {
             _windowManagerService.ShowWindow(_allMessagesViewModel);
         }
 
+
+        /// <summary>
+        /// Очищение ресурсов окна
+        /// </summary>
         public override void ClearResources()
         {
             _allMessagesViewModel?.CloseAction?.Invoke();
             StopServer();
         }
+
+
+        /// <summary>
+        /// Открытие файла, содержимое которого необходимо спарсить
+        /// </summary>
         public void OpenFile()
         {
             try
@@ -67,13 +94,20 @@ namespace Server.ViewModels
 
                 if (openFileDialog.ShowDialog() == true)
                 {
-                    Task.Run(() => ParseFile(openFileDialog.FileName));
+                    Task.Run(() => ParseFile(openFileDialog.FileName)); //парсим файл
                 }
             }
             catch (Exception ex)
             {
             }
         }
+
+
+        /// <summary>
+        /// Функция парсинга файла
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
         public async Task ParseFile(string filePath)
         {
             try
@@ -82,12 +116,13 @@ namespace Server.ViewModels
                 Message fileData = null;
 
                 XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load(filePath);
+                xmlDoc.Load(filePath); // загружаем файл
 
-                XmlNode messageNode = xmlDoc.SelectSingleNode("Message");
+                XmlNode messageNode = xmlDoc.SelectSingleNode("Message"); //ищем в нем узел messages
 
                 if (messageNode != null)
                 {
+                    //проверяем наличие необходимых данных
                     string? formatVersion = messageNode.SelectSingleNode("FormatVersion")?.InnerText;
                     string? from = messageNode.SelectSingleNode("From")?.InnerText;
                     string? to = messageNode.SelectSingleNode("To")?.InnerText;
@@ -106,21 +141,24 @@ namespace Server.ViewModels
                         return;
                     }
 
-
+                    //проверяем поле id
                     if (!int.TryParse(messageNode.SelectSingleNode("Id")?.InnerText, out int id))
                     {
                         TCPServerService.ErrorMessage = "Не удалось преобразовать поле 'Id' в числовое значение.";
                         return; // Возвращаем, если не удалось преобразовать Id
                     }
 
-
+                    //проверяем существует ли imagePath
                     if (!File.Exists(imagePath))
                     {
                         TCPServerService.ErrorMessage = "Неверный путь к картинке";
                         return;
                         
                     }
+
+                    //считываем картинку
                     byte[] imageBytes = await File.ReadAllBytesAsync(imagePath, _tokenSource.Token);
+                    //создаем сообщение
                     fileData = new Message()
                     {
                         Id = id,
@@ -132,16 +170,13 @@ namespace Server.ViewModels
                         ImagePath = imagePath,
                         ImageBytes = imageBytes
                     };
-                    
-                    TCPServerService.Message = fileData;
+                    TCPServerService.Message = fileData; //обновляем сообщение на сервере
                 }
             }
             catch (Exception ex)
             {
                 TCPServerService.ErrorMessage = ex.Message;
             }
-
         }
-
     }
 }

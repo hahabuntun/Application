@@ -5,16 +5,14 @@ namespace Server.ViewModels
 {
     public class ViewModelBase : INotifyPropertyChanged
     {
-        public Action CloseAction { get; set; }
+        public Action CloseAction { get; set; } //event при закрытии окна
+        //закрытие себя
         public void CloseSelf()
         {
             CloseAction?.Invoke();
         }
-        public Action ActivateAction { get; set; }
-        public virtual void ClearResources()
-        {
-
-        }
+        public Action ActivateAction { get; set; } //event при активации окна
+        public virtual void ClearResources(){ } //очистка ресурсов окна
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {

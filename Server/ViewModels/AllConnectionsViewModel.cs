@@ -13,19 +13,22 @@ namespace Server.ViewModels
         private ObservableCollection<SingleConnectionViewModel> _singleConnectionViewModels = new ObservableCollection<SingleConnectionViewModel>();
         private SingleConnectionViewModel _selectedConnectionViewModel;
 
+
         public ObservableCollection<SingleConnectionViewModel> SingleConnectionViewModels { get => _singleConnectionViewModels; set { _singleConnectionViewModels = value; } }
-
-
         public SingleConnectionViewModel SelectedConnectionViewModel
         {
             get => _selectedConnectionViewModel;
             set { _selectedConnectionViewModel = value; OnPropertyChanged(); }
         }
-        public ICommand CloseSubWindowsCommand { get;  }
-        public ICommand CloseSelfCommand { get;  }
-        public ICommand CreateSubWindowCommand { get; }
-        public ICommand ActivateSubWindowCommand { get; }
-        public ICommand CloseSubWindowCommand { get; }
+
+
+        public ICommand CloseSubWindowsCommand { get;  } //команда закрытия всех подокон
+        public ICommand CloseSelfCommand { get;  } //команда закрытия себя
+        public ICommand CreateSubWindowCommand { get; } //команда создания подокон
+        public ICommand ActivateSubWindowCommand { get; } //команда вывода подокон на передний план
+        public ICommand CloseSubWindowCommand { get; } //команда закрытия одного подокна
+        
+        
         public AllConnectionsViewModel(IWindowManagerService windowManagerService, ViewModelLocatorService viewModelLocatorService)
         {
             _windowManagerService = windowManagerService;
@@ -36,21 +39,36 @@ namespace Server.ViewModels
             ActivateSubWindowCommand = new RelayCommand(param => ActivateSubWindow((SingleConnectionViewModel)param));
             CreateSubWindowCommand = new RelayCommand(param => CreateSubWindow());
         }
+        
+        
+        /// <summary>
+        /// Создание подокна.
+        /// </summary>
         public void CreateSubWindow()
         {
             SingleConnectionViewModel singleConnectionViewModel =  _viewModelLocatorService.SingleConnectionViewModel;
             _windowManagerService.ShowWindow(singleConnectionViewModel);
             SingleConnectionViewModels.Add(singleConnectionViewModel);
         }
+
+
+        /// <summary>
+        /// Закрытие одного подокна
+        /// </summary>
+        /// <param name="viewModelToClose"></param>
         public void CloseSubWindow(SingleConnectionViewModel viewModelToClose)
         {
             if (viewModelToClose == null)
                 return;
             SingleConnectionViewModels.Remove(viewModelToClose);
-            viewModelToClose.CloseAction?.Invoke();
-            
-            
+            viewModelToClose.CloseAction?.Invoke(); 
         }
+
+
+        /// <summary>
+        /// Вывод подокна на передний план
+        /// </summary>
+        /// <param name="viewModelToActivate"></param>
         public void ActivateSubWindow(SingleConnectionViewModel viewModelToActivate)
         {
             if (viewModelToActivate == null)
@@ -64,6 +82,11 @@ namespace Server.ViewModels
                 }
             }
         }
+
+
+        /// <summary>
+        /// Очищение ресурсов окна при закрытии
+        /// </summary>
         public override void ClearResources()
         {
             foreach (var viewModel in SingleConnectionViewModels)
