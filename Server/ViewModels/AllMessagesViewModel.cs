@@ -1,4 +1,5 @@
-﻿using Server.Models;
+﻿using Microsoft.Extensions.Logging;
+using Server.Models;
 using Server.Services.Server;
 using System.Collections.ObjectModel;
 
@@ -10,6 +11,7 @@ namespace Server.ViewModels
     /// </summary>
     public class AllMessagesViewModel : ViewModelBase
     {
+        private readonly ILogger<AllMessagesViewModel> _logger;
         private StoredMessage _selectedMessage;
         public StoredMessage SelectedMessage
         {
@@ -25,12 +27,18 @@ namespace Server.ViewModels
         public ObservableCollection<StoredMessage> AllMessages { get => _allMessages; }
 
 
+        public AllMessagesViewModel(ILogger<AllMessagesViewModel> logger)
+        {
+            _logger = logger;
+        }
+
         /// <summary>
         /// Добавление сообщения
         /// </summary>
         /// <param name="message"></param>
         public void AddMessage(Message message)
         {
+            _logger.LogInformation("Вызвана функция добавления сообщения в список всех сообщений");
             StoredMessage mes = new StoredMessage()
             {
                 ServerAddress = TCPServerService.ServerAddress,
@@ -48,15 +56,18 @@ namespace Server.ViewModels
             //если текущий поток является UI потоком
             if (System.Windows.Application.Current.Dispatcher.CheckAccess())
             {
+                _logger.LogInformation("Функция вызвана из ui потока");
                 AllMessages.Add(mes);
             }
             //если текущий поток не является UI потоком(во избежание ошибки)
             else
             {
+                _logger.LogInformation("Функция вызвана не из ui потока");
                 System.Windows.Application.Current.Dispatcher.Invoke(() => AllMessages.Add(mes));
             }
+            _logger.LogInformation("Функция отработала");
         }
-        
+
 
     }
 

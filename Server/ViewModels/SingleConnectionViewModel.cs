@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Win32;
 using Server.Commands;
 using Server.Models;
 using Server.Services;
@@ -11,6 +12,7 @@ namespace Server.ViewModels
 {
     public class SingleConnectionViewModel : ViewModelBase
     {
+        private readonly ILogger<SingleConnectionViewModel> _logger;
         private readonly ITCPServerService _tcpServerService;
         private CancellationTokenSource _tokenSource;
         private readonly IWindowManagerService _windowManagerService;
@@ -26,9 +28,9 @@ namespace Server.ViewModels
         public ICommand OpenAllMessagesCommand { get; } //команда открытия всех сообщений сессии
 
 
-        public SingleConnectionViewModel(ITCPServerService tcpServerService, IWindowManagerService windowManagerService, ViewModelLocatorService viewModelLocatorService)
+        public SingleConnectionViewModel(ILogger<SingleConnectionViewModel> logger, ITCPServerService tcpServerService, IWindowManagerService windowManagerService, ViewModelLocatorService viewModelLocatorService)
         {
-            
+            _logger = logger;
             _windowManagerService = windowManagerService;
             _viewModelLocatorService = viewModelLocatorService;
             _allMessagesViewModel = _viewModelLocatorService.AllMessagesViewModel;
@@ -48,6 +50,7 @@ namespace Server.ViewModels
         /// </summary>
         public void StartServer()
         {
+            _logger.LogInformation("Вызвана команда start");
             _tokenSource = new CancellationTokenSource();
             CancellationToken cancellationToken = _tokenSource.Token;
             Task.Run(() => _tcpServerService.StartServerAsync(cancellationToken), cancellationToken);
@@ -59,6 +62,7 @@ namespace Server.ViewModels
         /// </summary>
         public void StopServer()
         {
+            _logger.LogInformation("Вызвана команда stop");
             _tokenSource?.Cancel();
         }
 
@@ -68,6 +72,7 @@ namespace Server.ViewModels
         /// </summary>
         public void OpenAllMessages()
         {
+            _logger.LogInformation("Вызвана команда открытия всех сообщений");
             _windowManagerService.ShowWindow(_allMessagesViewModel);
         }
 
@@ -77,6 +82,7 @@ namespace Server.ViewModels
         /// </summary>
         public override void ClearResources()
         {
+            _logger.LogInformation("Очистка ресурсов");
             _allMessagesViewModel?.CloseAction?.Invoke();
             StopServer();
         }
@@ -87,6 +93,7 @@ namespace Server.ViewModels
         /// </summary>
         public void OpenFile()
         {
+            _logger.LogInformation("Вызвана команда открытия файла");
             try
             {
                 OpenFileDialog openFileDialog = new OpenFileDialog();
@@ -110,6 +117,7 @@ namespace Server.ViewModels
         /// <returns></returns>
         public async Task ParseFile(string filePath)
         {
+            _logger.LogInformation("Начинаем парсить файл");
             try
             {
                 _tcpServerService.ErrorMessage = "";
@@ -117,6 +125,7 @@ namespace Server.ViewModels
 
                 XmlDocument xmlDoc = new XmlDocument();
                 xmlDoc.Load(filePath); // загружаем файл
+                _logger.LogInformation("Файл загружены");
 
                 XmlNode messageNode = xmlDoc.SelectSingleNode("Message"); //ищем в нем узел messages
 
@@ -138,6 +147,7 @@ namespace Server.ViewModels
                         string.IsNullOrEmpty(imagePath))
                     {
                         TCPServerService.ErrorMessage = "Не все обязательные поля заполнены в файле.";
+                        _logger.LogWarning("Не все обязательные поля заполнены в файле.");
                         return;
                     }
 
@@ -145,6 +155,7 @@ namespace Server.ViewModels
                     if (!int.TryParse(messageNode.SelectSingleNode("Id")?.InnerText, out int id))
                     {
                         TCPServerService.ErrorMessage = "Не удалось преобразовать поле 'Id' в числовое значение.";
+                        _logger.LogWarning("Не удалось преобразовать поле 'Id' в числовое значение.");
                         return; // Возвращаем, если не удалось преобразовать Id
                     }
 
@@ -152,12 +163,15 @@ namespace Server.ViewModels
                     if (!File.Exists(imagePath))
                     {
                         TCPServerService.ErrorMessage = "Неверный путь к картинке";
+                        _logger.LogWarning("Неверный путь к картинке");
                         return;
                         
                     }
 
                     //считываем картинку
+                    _logger.LogInformation("Читаем картинку с диска");
                     byte[] imageBytes = await File.ReadAllBytesAsync(imagePath, _tokenSource.Token);
+                    _logger.LogInformation("Картинка прочитана");
                     //создаем сообщение
                     fileData = new Message()
                     {
@@ -176,6 +190,8 @@ namespace Server.ViewModels
             catch (Exception ex)
             {
                 TCPServerService.ErrorMessage = ex.Message;
+                _logger.LogWarning(ex.Message);
+
             }
         }
     }

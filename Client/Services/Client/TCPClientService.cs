@@ -58,29 +58,30 @@ namespace Client.Services.Client
         public async Task StartClientAsync(CancellationToken cancellationToken)
         {
             //обнуляем данные для отображения
-            _logger.LogInformation("Starting client...");
+            _logger.LogInformation("Вызвана функция запуска клиента");
             ErrorMessage = "";
             ConnectionStatus = "Not Connected";
             IsConnected = false;
             Message = null;
             ClientPort = 0;
             ClientAddress = "";
+            _logger.LogInformation("Данные отображения обновлены");
             try
             {
                 using (TcpClient tcpClient = new TcpClient())
                 {
-                    _logger.LogInformation("Connecting to server at {ServerAddress}:{ServerPort}", ServerAddress, ServerPort);
+                    _logger.LogInformation($"Подключаемся к серверу {ServerAddress}:{ServerPort}");
                     await tcpClient.ConnectAsync(ServerAddress, ServerPort, cancellationToken); //подключение к серверу
                     IsConnected = true;
                     ConnectionStatus = "Connected";
-                    _logger.LogInformation("Connected to server at {ServerAddress}:{ServerPort}", ServerAddress, ServerPort);
+                    _logger.LogInformation($"Подключение с сервером {ServerAddress}:{ServerPort} установлено");
 
                     IPEndPoint clientEndPoint = tcpClient.Client.LocalEndPoint as IPEndPoint; //получаем свои данные(адресс и port)
                     if (clientEndPoint != null)
                     {
                         ClientAddress = clientEndPoint.Address.ToString();
                         ClientPort = clientEndPoint.Port;
-                        _logger.LogInformation("Client endpoint is {ClientAddress}:{ClientPort}", ClientAddress, ClientPort);
+                        _logger.LogInformation($"Клиент работает на  {ClientAddress}:{ClientPort}");
                     }
 
                     using (NetworkStream stream = tcpClient.GetStream()) //получаем поток для обмена данных с сервером
@@ -93,31 +94,36 @@ namespace Client.Services.Client
                             CancellationToken linkedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, resendToken).Token;
                             try
                             {
-                                _logger.LogInformation("Receiving message from server...");
+                                _logger.LogInformation("Ожидаем получения данных от сервера");
                                 Message = await ReceiveMessage(stream, cancellationToken); //получаем данные от сервера
+                                _logger.LogInformation("Данные от сервера получены");
                                 OnMessageReceived();
-                                _logger.LogInformation("Message received from server.");
+                                _logger.LogInformation("Оповестили подписчиков о получении сообщения");
                                 // ждем сообщения отключения от сервера
                                 // если клиент прерывает работу то срабатывает обычный токен отмены, если запрошена повторная отправка данных, то сработает второй токен
+                                _logger.LogInformation("Ожидаем запрос на отключение от сервера, либо нажатие кнопки повторной отправки");
                                 string discString = await ReceiveDisconnectAsync(stream, linkedCancellationToken); 
                                 
-                                _logger.LogWarning("Client disconnected by server.");
+                                _logger.LogWarning("Сервер разорвал подключение");
                                 break;
                             }
-                            //обработка исплючения, когда сработал токен отмены по причине повторного запроса
+                            //обработка исключения, когда сработал токен отмены по причине повторного запроса
                             catch (OperationCanceledException) when (resendToken.IsCancellationRequested)
                             {
                                 Message = null;
                                 await Task.Delay(1000);
-                                _logger.LogWarning("Resend requested");
+                                _logger.LogWarning("Отправка запроса resend");
                                 await SendStringAsync(stream, "resend", cancellationToken);
+                                _logger.LogWarning("Запрос resend отправлен");
+
                             }
                             //обработка исключения, когда сработал токен отмены по причине остановки клиента
                             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                             {
-                                    _logger.LogWarning("Disconnection requested.");
-                                    await SendStringAsync(stream, "disconnect", CancellationToken.None);
-                                    break;
+                                _logger.LogWarning("Отправка запроса disconnect");
+                                await SendStringAsync(stream, "disconnect", CancellationToken.None);
+                                _logger.LogWarning("Запрос disconnect отправлен");
+                                break;
                             }
                         }
                     }
@@ -126,12 +132,12 @@ namespace Client.Services.Client
             //обработка исключения(сервре завершает работу)
             catch (ServerDisconnectedException)
             {
-                _logger.LogWarning("Client disconnected by server.");
+                _logger.LogWarning("Сервер разорвал соединение");
             }
             //другие исключения
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while communicating with the server.");
+                _logger.LogError(ex, "Произошла ошибка во время соединение с сервером");
                 ErrorMessage = ex.Message;
             }
             //очистка используемых данных и обновление ui
@@ -143,7 +149,7 @@ namespace Client.Services.Client
                 Message = null;
                 ClientPort = 0;
                 ClientAddress = "";
-                _logger.LogInformation("Client stopped.");
+                _logger.LogInformation("Клиент остановлен");
             }
         }
 
@@ -156,15 +162,15 @@ namespace Client.Services.Client
         /// <returns></returns>
         public async Task<Message> ReceiveMessage(NetworkStream stream, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Receiving text...");
+            _logger.LogInformation("Ожидаем text");
             string text = await ReceiveStringAsync(stream, cancellationToken); // получение текста от сервера
-            _logger.LogInformation("Receiving color...");
+            _logger.LogInformation("Ожидаем color");
             string color = await ReceiveStringAsync(stream, cancellationToken); // получение цвета от сервера
-            _logger.LogInformation("Receiving sender info...");
+            _logger.LogInformation("Ожидаем from");
             string from = await ReceiveStringAsync(stream, cancellationToken); // получение from от сервера
-            _logger.LogInformation("Receiving image...");
+            _logger.LogInformation("Ожидание картинки");
             byte[] image = await ReceiveImageAsync(stream, cancellationToken); // получение картинки от сервера
-            _logger.LogInformation("Saving image to disk...");
+            _logger.LogInformation("Сохранение картинки на диск");
             string imagePath = await SaveImageToDiskAsync(image, cancellationToken); // сохранение картинки
             //сохраняем данные полученные от сервера в переменную mes
             Message mes = new Message()
@@ -191,10 +197,11 @@ namespace Client.Services.Client
         {
             byte[] imageBuffer = [];
 
-            _logger.LogInformation("Waiting for server readiness to send image...");
+            _logger.LogInformation("Ожидаем получения сообщения is-ready-to-rec");
             byte[] isReadyBuffer = new byte[64];
             await stream.ReadAsync(isReadyBuffer, 0, 64, cancellationToken); // ожидаем запроса messageType: is-ready-to-rec; от сервера
             
+            _logger.LogInformation("Парсим полученное сообщение");
             //выделяем данные из полученного сообщения
             string isReadyMessage = Encoding.UTF8.GetString(isReadyBuffer);
             int spaceIndex = isReadyMessage.IndexOf(' ');
@@ -204,7 +211,9 @@ namespace Client.Services.Client
             //если получено ожидаемое сообщение то получаем сначала размер данных, а затем сами данные
             if (messageType == "is-ready-to-rec")
             {
+                _logger.LogInformation("Отправляем строку ready");
                 await SendStringAsync(stream, "ready", cancellationToken); //отправляем строку ready на сервер
+                _logger.LogInformation("Получаем длину изображения");
                 byte[] lengthBuffer = new byte[4]; 
                 await stream.ReadAsync(lengthBuffer, 0, 4, cancellationToken); //ждем размера картинки
                 int length = BitConverter.ToInt32(lengthBuffer, 0);
@@ -212,17 +221,17 @@ namespace Client.Services.Client
                 //считываем картинку
                 imageBuffer = new byte[length];
                 int totalBytesRead = 0;
+                _logger.LogInformation("Получаем изображение");
                 while (totalBytesRead < length)
                 {
                     int bytesRead = await stream.ReadAsync(imageBuffer, totalBytesRead, length - totalBytesRead, cancellationToken);
                     totalBytesRead += bytesRead;
                 }
-                _logger.LogInformation("Image received.");
+                _logger.LogInformation("Изображение получено");
             }
             //если сервер отправил строку disconnect
             else if (messageType == "disconnect")
             {
-                _logger.LogWarning("Server sent disconnect message.");
                 throw new ServerDisconnectedException();
             }
 
@@ -244,35 +253,36 @@ namespace Client.Services.Client
         {
             string receivedString = "";
 
-            _logger.LogInformation("Waiting for server readiness to send string...");
+            _logger.LogInformation("Ожидаем получения сообщения is-ready-to-rec");
             byte[] isReadyBuffer = new byte[64];
             await stream.ReadAsync(isReadyBuffer, 0, 64, cancellationToken); // ожидаем запроса messageType: is-ready-to-rec; от сервера
-            
+
+            _logger.LogInformation("Парсим полученное сообщение");
             //выделяем данные из полученного сообщения
             string isReadyMessage = Encoding.UTF8.GetString(isReadyBuffer); 
             int spaceIndex = isReadyMessage.IndexOf(' ');
             int semicolonIndex = isReadyMessage.IndexOf(';');
-
-            //если получено ожидаемое сообщение то получаем сначала размер данных, а затем сами данны
             string messageType = isReadyMessage.Substring(spaceIndex + 1, semicolonIndex - spaceIndex - 1);
+            //если получено ожидаемое сообщение то получаем сначала размер данных, а затем сами данны
             if (messageType == "is-ready-to-rec")
             {
+                _logger.LogInformation("Отправляем строку ready");
                 await SendStringAsync(stream, "ready", cancellationToken); //отправляем строку ready на сервер
                 byte[] lengthBuffer = new byte[4];
+                _logger.LogInformation("Ожидаем длину сообщения");
                 await stream.ReadAsync(lengthBuffer, 0, 4, cancellationToken); //ждем размера сообщения
                 int length = BitConverter.ToInt32(lengthBuffer, 0);
-
+                _logger.LogInformation("Ожидаем сообщение");
                 byte[] stringBuffer = new byte[length];
                 await stream.ReadAsync(stringBuffer, 0, length, cancellationToken); //получаем сообщение
                 receivedString = Encoding.UTF8.GetString(stringBuffer);
-                _logger.LogInformation("String received.");
+                _logger.LogInformation("Сообщение получено");
 
                 return receivedString;
             }
             //если сервер отправил строку disconnect
             else if (messageType == "disconnect")
             {
-                _logger.LogWarning("Server sent disconnect message.");
                 throw new ServerDisconnectedException();
 
             }
@@ -294,10 +304,11 @@ namespace Client.Services.Client
         /// <exception cref="Exception"></exception>
         public async Task<string> ReceiveDisconnectAsync(NetworkStream stream, CancellationToken linkedCancellationToken)
         {
-            _logger.LogInformation("Waiting for server disconnect message...");
+            _logger.LogInformation("Ожидаем получения сообщения об отключении серверера либо команды resend");
             byte[] isReadyBuffer = new byte[64];
             await stream.ReadAsync(isReadyBuffer, 0, 64, linkedCancellationToken); //ждем сообщенеия от сервера
-            
+            _logger.LogInformation("Получено сообщение");
+
             //выделяем данные из полученного сообщения
             string isReadyMessage = Encoding.UTF8.GetString(isReadyBuffer);
             int spaceIndex = isReadyMessage.IndexOf(' ');
@@ -307,10 +318,10 @@ namespace Client.Services.Client
             //если сервер не отправил строку disconnect то выбрасываем ошибку, потому что эта строка не ожидается
             if (messageType != "disconnect")
             {
-                _logger.LogError("Unexpected message type received: {MessageType}", messageType);
+                _logger.LogError($"Получено неожиданное сообщение: {messageType}");
                 throw new Exception("Server sent unexpected message;");
             }
-            _logger.LogInformation("Server disconnect message received.");
+            _logger.LogInformation("Получено сообщение disconnect");
             return messageType;
         }
 
@@ -324,11 +335,11 @@ namespace Client.Services.Client
         /// <returns></returns>
         public async Task SendStringAsync(NetworkStream stream, string message, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Sending string to server: {Message}", message);
+            _logger.LogInformation($"Отправляем строку на сервер: {message}");
             byte[] data = Encoding.UTF8.GetBytes(message);
             await stream.WriteAsync(data, cancellationToken);
             await stream.FlushAsync(cancellationToken);
-            _logger.LogInformation("String sent to server.");
+            _logger.LogInformation("Строка отправлена");
         }
 
 
@@ -342,9 +353,9 @@ namespace Client.Services.Client
         {
             string fileName = $"{Guid.NewGuid()}.bmp";
             string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), fileName);
-            _logger.LogInformation("Saving image to disk at {FilePath}", filePath);
+            _logger.LogInformation($"Сохраняем картинку по пути {filePath}");
             await File.WriteAllBytesAsync(filePath, imageData, cancellationToken);
-            _logger.LogInformation("Image saved to disk at {FilePath}", filePath);
+            _logger.LogInformation($"Картинка сохранена по пути {filePath}");
             return filePath;
         }
 

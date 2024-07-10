@@ -1,12 +1,14 @@
 ﻿using Client.Commands;
 using Client.Services;
 using Client.Services.Client;
+using Microsoft.Extensions.Logging;
 using System.Windows.Input;
 
 namespace Client.ViewModels
 {
     public class ClientViewModel : ViewModelBase
     {
+        private readonly ILogger<ClientViewModel> _logger;
         private readonly ITCPClientService _tcpClientService;
         private CancellationTokenSource _tokenSource;
         private readonly IWindowManagerService _windowManagerService;
@@ -22,8 +24,9 @@ namespace Client.ViewModels
         public ICommand OpenAllMessagesCommand { get; }
 
 
-        public ClientViewModel(ITCPClientService tcpClientService, IWindowManagerService windowManagerService, ViewModelLocatorService viewModelLocatorService)
+        public ClientViewModel(ILogger<ClientViewModel> logger, ITCPClientService tcpClientService, IWindowManagerService windowManagerService, ViewModelLocatorService viewModelLocatorService)
         {
+            _logger = logger;
             _windowManagerService = windowManagerService;
             _viewModelLocatorService = viewModelLocatorService;
             _allMessagesViewModel = viewModelLocatorService.AllMessagesViewModel;
@@ -43,6 +46,7 @@ namespace Client.ViewModels
         /// </summary>
         public void StartClient()
         {
+            _logger.LogInformation("Вызвана команда старт");
             _tokenSource = new CancellationTokenSource();
             CancellationToken cancellationToken = _tokenSource.Token;
             Task.Run(() => _tcpClientService.StartClientAsync(cancellationToken), cancellationToken);
@@ -54,6 +58,7 @@ namespace Client.ViewModels
         /// </summary>
         public void OpenAllMessages()
         {
+            _logger.LogInformation("Вызвана команда открытия страницы всех сообщений");
             _windowManagerService.ShowWindow(_allMessagesViewModel);
         }
 
@@ -63,6 +68,7 @@ namespace Client.ViewModels
         /// </summary>
         public void StopClient()
         {
+            _logger.LogInformation("Вызвана команда остановки клиента");
             _tokenSource?.Cancel();
         }
 
@@ -72,6 +78,7 @@ namespace Client.ViewModels
         /// </summary>
         public void RequestResend()
         {
+            _logger.LogInformation("Вызвана команда повторной отправки");
             _tcpClientService.ResendCancellationTokenSource?.Cancel();
         }
 
@@ -82,6 +89,7 @@ namespace Client.ViewModels
         /// </summary>
         public override void ClearResources()
         {
+            _logger.LogInformation("Вызвана функция очищения ресурсов");
             _allMessagesViewModel?.CloseAction?.Invoke();
             StopClient();
         }
