@@ -186,6 +186,7 @@ namespace Server.ViewModels
                         ImageBytes = imageBytes
                     };
                     TCPServerService.Message = fileData; //обновляем сообщение на сервере
+                    TCPServerService.MessageFilled?.Cancel();
                 }
             }
             catch (Exception ex)

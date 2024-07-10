@@ -45,7 +45,8 @@ namespace Server.Services.Server
         public ObservableCollection<string> AvailableAddresses { get => _availableAddresses; set { _availableAddresses = value; OnPropertyChanged(); } }
         public Message Message { get => _message; set { _message = value; OnPropertyChanged(); } } // отсылаемое сообщение
 
-        public event Action<Message> messageSent; 
+        public event Action<Message> messageSent;
+        public CancellationTokenSource MessageFilled { get; set; }
 
 
 
@@ -183,6 +184,8 @@ namespace Server.Services.Server
                 _logger.LogInformation("Server stopped");
             }
         }
+
+
         /// <summary>
         /// Ведет диалог с клиентом
         /// </summary>
@@ -202,7 +205,25 @@ namespace Server.Services.Server
             {
                 try
                 {
-                    //Ждем пока появится сообщение(обработается xml файл)
+                    MessageFilled = new CancellationTokenSource();
+                    CancellationToken messageFilledToken = MessageFilled.Token;
+                    CancellationToken linkedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, messageFilledToken).Token;
+                    try
+                    {
+                        string disconnect = await ReceiveDisconnectAsync(stream, linkedCancellationToken);
+                        throw new ClientDisconnectedException();
+                    }
+                    catch (OperationCanceledException) when (messageFilledToken.IsCancellationRequested)
+                    {
+                        _logger.LogInformation("Данные спарсены");
+                    }
+                    //обработка исключения, когда сработал токен отмены по причине остановки клиента
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+                    
+                    /*//Ждем пока появится сообщение(обработается xml файл)
                     while (Message == null)
                     {
                         //выходим из цикла если сервер остановлен
@@ -210,7 +231,8 @@ namespace Server.Services.Server
                         {
                             throw new OperationCanceledException();
                         }
-                    }
+                    }*/
+
                     _logger.LogInformation("Отправляем данные клиенту");
                     await SendMessageAsync(stream, Message, cancellationToken); //Отправляем обработанные данные клиенту
                     _logger.LogInformation("Данные были отправлены");
@@ -251,6 +273,8 @@ namespace Server.Services.Server
                 }
             }
         }
+
+
         /// <summary>
         /// Проверка валидности адресса и порта сервера. Пока не реализована
         /// </summary>
@@ -269,6 +293,8 @@ namespace Server.Services.Server
                 return true;
             }
         }
+
+
         /// <summary>
         /// Поулчение сообщения от клиента
         /// </summary>
@@ -287,6 +313,34 @@ namespace Server.Services.Server
             _logger.LogInformation($"Строка получена: {request}");
             return request;
         }
+
+        /// <summary>
+        /// Получает запрос отключения от клиента
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="linkedCancellationToken"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task<string> ReceiveDisconnectAsync(NetworkStream stream, CancellationToken linkedCancellationToken)
+        {
+            _logger.LogInformation("Ожидаем получения сообщения об отключении клиента или получение данных для отправки");
+            byte[] requestBuffer = new byte[64];
+            int bytes_read = await stream.ReadAsync(requestBuffer, 0, 64, linkedCancellationToken); //ждем сообщенеия от сервера
+            _logger.LogInformation("Получено сообщение");
+
+            //выделяем данные из полученного сообщения
+            string request = Encoding.UTF8.GetString(requestBuffer, 0, bytes_read);
+            //если сервер не отправил строку disconnect то выбрасываем ошибку, потому что эта строка не ожидается
+            if (request != "disconnect")
+            {
+                _logger.LogError($"Получено неожиданное сообщение: {request}");
+                throw new Exception("Клиент отправил неожиданное сообщение");
+            }
+            _logger.LogInformation("Получено сообщение disconnect");
+            return request;
+        }
+
+
         /// <summary>
         /// Функция отправки данных клиенту.
         /// Поочередно отправляет необходимые данные клиенту
@@ -324,6 +378,8 @@ namespace Server.Services.Server
             else
                 await SendStringAsync(stream, "is-ready-to-rec", "no-data", cancellationToken);
         }
+
+
         /// <summary>
         /// Отправка картинки клиенту
         /// Запрос клиенту на готовность получения => отправка длины картинки => отправка самой картинки
@@ -361,6 +417,8 @@ namespace Server.Services.Server
                 throw new ClientDisconnectedException();
             }
         }
+
+
         /// <summary>
         /// Отправка строки клиенту
         /// Запрос клиенту на готовность получения => отправка длины строки => отправка строки
@@ -413,6 +471,7 @@ namespace Server.Services.Server
                 _logger.LogInformation("Строка messageType: disconnect; отправлена");
             }
         }
+
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)

@@ -16,7 +16,9 @@ namespace Server.Services.Server
         public event Action<Message> messageSent;
         public void OnMessageSent();
         public bool IsServerStopped { get; set; }
+        public CancellationTokenSource MessageFilled { get; set; }
         Task StartServerAsync(CancellationToken cancellationToken);
+        Task<string> ReceiveDisconnectAsync(NetworkStream stream, CancellationToken linkedCancellationToken);
         Task<bool> ValidateServerAddressAndPort(string serverAddress, int serverPort, CancellationToken cancellationToken);
         Task HandleClientAsync(TcpClient client, CancellationToken cancellationToken);
         Task SendMessageAsync(NetworkStream stream, Message message, CancellationToken cancellationToken);
