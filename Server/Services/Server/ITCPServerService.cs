@@ -1,4 +1,5 @@
 ﻿using Server.Models;
+using System.Collections.ObjectModel;
 using System.Net.Sockets;
 
 namespace Server.Services.Server
@@ -6,15 +7,13 @@ namespace Server.Services.Server
     public interface ITCPServerService
     {
         public Message Message { get; set; }
-        public string ConnectionStatus { get; set; }
         public string ServerAddress { get; set; }
         public int ServerPort { get; set; }
-        public string ClientAddress { get; set; }
-        public int ClientPort { get; set; }
         public string ErrorMessage { get; set; }
-        public bool IsClientConnected { get; set; }
-        public event Action<Message> messageSent;
-        public void OnMessageSent();
+        public event Action<Message, ObservableCollection<TcpClient>> messageSent;
+        public ObservableCollection<TcpClient> Clients { get; set; }
+        public int ClientsCount { get; set; }
+        public void OnMessageSent(ObservableCollection<TcpClient> clients);
         public bool IsServerStopped { get; set; }
         public CancellationTokenSource MessageFilled { get; set; }
         Task StartServerAsync(CancellationToken cancellationToken);

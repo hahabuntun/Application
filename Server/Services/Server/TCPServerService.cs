@@ -3,6 +3,7 @@ using Server.Exceptions;
 using Server.Helpers;
 using Server.Models;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -24,28 +25,27 @@ namespace Server.Services.Server
         private ObservableCollection<string> _availableAddresses = new ObservableCollection<string>(); //на каких адрессах мы можем запуститься
         private readonly ILogger<TCPServerService> _logger;
         private string _errorMessage = "";
-        private bool _isClientConnected = false;
         private bool _isServerStopped = true;
-        private string _clientAddress;
-        private int _clientPort;
+        private bool _isServerRunning = false;
         private string _serverAddress;
         private int _serverPort;
-        private string _connectionStatus = "Not connected";
         private Message _message = null;
 
 
-        public string ConnectionStatus { get => _connectionStatus; set {  _connectionStatus = value; OnPropertyChanged(); } }
         public string ServerAddress { get => _serverAddress; set { _serverAddress = value; OnPropertyChanged(); } }
         public int ServerPort { get => _serverPort; set { _serverPort = value; OnPropertyChanged(); } }
-        public string ClientAddress { get => _clientAddress; set { _clientAddress = value; OnPropertyChanged(); } }
-        public int ClientPort { get => _clientPort; set { _clientPort = value; OnPropertyChanged(); } }
         public string ErrorMessage { get => _errorMessage; set { _errorMessage = value; OnPropertyChanged(); } }
-        public bool IsClientConnected { get => _isClientConnected; set { _isClientConnected = value; OnPropertyChanged(); } }
         public bool IsServerStopped { get => _isServerStopped; set { _isServerStopped = value; OnPropertyChanged(); } }
+        public bool IsServerRunning { get => _isServerRunning; set { _isServerRunning = value; OnPropertyChanged(); } }
         public ObservableCollection<string> AvailableAddresses { get => _availableAddresses; set { _availableAddresses = value; OnPropertyChanged(); } }
         public Message Message { get => _message; set { _message = value; OnPropertyChanged(); } } // отсылаемое сообщение
+        private ObservableCollection<TcpClient> _clients = new ObservableCollection<TcpClient>();
+        public ObservableCollection<TcpClient> Clients { get => _clients; set { _clients = value; OnPropertyChanged(); } }
+        private readonly object _countLock = new object();
+        private int _clientsCount;
+        public int ClientsCount { get => _clientsCount; set { _clientsCount = value; OnPropertyChanged(); } }
 
-        public event Action<Message> messageSent;
+        public event Action<Message, ObservableCollection<TcpClient>> messageSent;
         public CancellationTokenSource MessageFilled { get; set; }
 
 
@@ -61,9 +61,9 @@ namespace Server.Services.Server
         /// <summary>
         /// Вызывается при отсылке сообщения, чтобы обновить окно всех сообщений
         /// </summary>
-        public void OnMessageSent()
+        public void OnMessageSent(ObservableCollection<TcpClient> clients)
         {
-            messageSent?.Invoke(Message);
+            messageSent?.Invoke(Message, clients);
         }
         /// <summary>
         /// Формирует список доступных ip для сервера
@@ -114,6 +114,7 @@ namespace Server.Services.Server
         /// <returns></returns>
         public async Task StartServerAsync(CancellationToken cancellationToken)
         {
+            MessageFilled = new CancellationTokenSource();
             ErrorMessage = "";
             _logger.LogInformation($"Запуск сервера на {ServerAddress}:{ServerPort}");
 
@@ -133,38 +134,39 @@ namespace Server.Services.Server
                 {
                     tcpListener.Start(); //начинаем работу
                     IsServerStopped = false;
+                    IsServerRunning = true;
                     TcpClient client;
                     _logger.LogInformation("Сервер успешно запущен");
 
                     while (!cancellationToken.IsCancellationRequested) //пока работа не приостановлена слушаем клиентов
                     {
                         _logger.LogInformation("Ожидаем подключения клиента");
-                        using (client = await tcpListener.AcceptTcpClientAsync(cancellationToken))
+                        client = await tcpListener.AcceptTcpClientAsync(cancellationToken);
+                        if (System.Windows.Application.Current.Dispatcher.CheckAccess())
                         {
-                            ConnectionStatus = "Connected";
-                            IsClientConnected = true;
-                            try
-                            {
-                                await HandleClientAsync(client, cancellationToken); //обрабатываем клиента
-                            }
-                            //перехватываем исключение об отключении клиента
-                            catch (ClientDisconnectedException ex)
-                            {
-                                _logger.LogWarning(ex, "Client disconnected");
-                            }
-                            //обнуляем информацию для отображения
-                            finally
-                            {
-                                IsClientConnected = false;
-                                ClientAddress = "";
-                                ConnectionStatus = "Not connected";
-                                ClientPort = 0;
-                                Message = null;
-                                _logger.LogInformation("Client connection closed");
-                            }
+                            Clients.Add(client);
+                            ClientsCount = ClientsCount + 1;
                         }
+                        else
+                        {
+                            _logger.LogInformation("Функция вызвана не из ui потока");
+                            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                Clients.Add(client);
+                                ClientsCount = ClientsCount + 1;
+                            });
+                        }
+                        //await HandleClientAsync(client, cancellationToken); //обрабатываем клиента
+                        Task.Run(() => HandleClientAsync(client, cancellationToken), cancellationToken); //обрабатываем клиента       
                     }
                 }
+            }
+            catch(OperationCanceledException)
+            {
+                IsServerStopped = true;
+                IsServerRunning = false;
+                Message = null;
+                _logger.LogInformation("Server stopped");
             }
             //перехватываем необработанные исключения
             catch (Exception ex)
@@ -175,11 +177,8 @@ namespace Server.Services.Server
             //обнуляем информацию для отображения
             finally
             {
-                IsClientConnected = false;
                 IsServerStopped = true;
-                ConnectionStatus = "Not connected";
-                ClientAddress = "";
-                ClientPort = 0;
+                IsServerRunning = false;
                 Message = null;
                 _logger.LogInformation("Server stopped");
             }
@@ -197,15 +196,14 @@ namespace Server.Services.Server
         {
             //получаем данные клиента(адресс и порт)
             IPEndPoint? clientEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
-            ClientAddress = clientEndPoint.Address.ToString();
-            ClientPort = clientEndPoint.Port;
+            var ClientAddress = clientEndPoint.Address.ToString();
+            var ClientPort = clientEndPoint.Port;
             _logger.LogInformation($"Клиент подключен {ClientAddress}:{ClientPort}");
             //создаем поток для связи с клиентом
             using (NetworkStream stream = client.GetStream())
             {
                 try
                 {
-                    MessageFilled = new CancellationTokenSource();
                     CancellationToken messageFilledToken = MessageFilled.Token;
                     CancellationToken linkedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, messageFilledToken).Token;
                     try
@@ -222,22 +220,12 @@ namespace Server.Services.Server
                     {
                         throw;
                     }
-                    
-                    /*//Ждем пока появится сообщение(обработается xml файл)
-                    while (Message == null)
-                    {
-                        //выходим из цикла если сервер остановлен
-                        if (cancellationToken.IsCancellationRequested)
-                        {
-                            throw new OperationCanceledException();
-                        }
-                    }*/
+     
 
                     _logger.LogInformation("Отправляем данные клиенту");
                     await SendMessageAsync(stream, Message, cancellationToken); //Отправляем обработанные данные клиенту
                     _logger.LogInformation("Данные были отправлены");
                     _logger.LogInformation("Оповещаем подписчиков об отправке сообщения");
-                    OnMessageSent(); // сообщаем подписчикам об изменении
 
                     string clientRequest;
                     //ждем запроса на пересылку данных или на выключение
@@ -250,26 +238,55 @@ namespace Server.Services.Server
                             await SendMessageAsync(stream, Message, cancellationToken); //отправляем ему сообщение повторно
                             _logger.LogInformation("Данные были отправлены");
                             _logger.LogInformation("Оповещаем подписчиков об отправке сообщения");
-                            OnMessageSent(); // оповещаем подписчиков об отправке сообщения
+                            OnMessageSent(new ObservableCollection<TcpClient>() { client });
                         }
                         else if (clientRequest == "disconnect") //если клиент отправил запрос disconnect
                         {
                             _logger.LogInformation("Клиент отправил запрос disconnect");
-                            //stream?.Close();
                             throw new ClientDisconnectedException(); //выбрасываем исключение об отключении клиента
                         }
                     }
                     _logger.LogInformation("Отправляем строку disconnect");
-                    await SendStringAsync(stream, "disconnect", "", CancellationToken.None); //отправляем строку disconnect на сервер(нельзя отменить операцию)
+                    await SendStringAsync(stream, "disconnect", "", CancellationToken.None); //отправляем строку disconnect(нельзя отменить операцию)
                     _logger.LogInformation("Строка отправлена");
-                    return;
                 }
                 catch (OperationCanceledException)
                 {
                     _logger.LogInformation("Отправляем строку disconnect");
-                    await SendStringAsync(stream, "disconnect", "", CancellationToken.None); //отправляем строку disconnect на сервер(нельзя отменить операцию)
+                    await SendStringAsync(stream, "disconnect", "", CancellationToken.None); //отправляем строку disconnect(нельзя отменить операцию)
+                    client?.Close();
                     _logger.LogInformation("Строка отправлена");
-                    return;
+                    throw;
+                }
+                catch(ClientDisconnectedException)
+                {
+                    _logger.LogWarning("Client sent disconnect string");
+                }
+                catch(Exception)
+                {
+                    _logger.LogWarning("ErrorOccured");
+                }
+                finally
+                {
+                    if (System.Windows.Application.Current.Dispatcher.CheckAccess())
+                    {
+                        Clients?.Remove(client);
+                        lock (_countLock)
+                        {
+                            ClientsCount = ClientsCount - 1;
+                        }
+                    }
+                    else
+                    {
+                        System.Windows.Application.Current.Dispatcher.Invoke(() => { 
+                            Clients?.Remove(client);
+                            lock (_countLock)
+                            {
+                                ClientsCount = ClientsCount - 1;
+                            }
+                        });
+                    }
+                    client?.Close();
                 }
             }
         }

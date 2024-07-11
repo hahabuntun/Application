@@ -112,7 +112,8 @@ namespace Server.ViewModels
         public override void ClearResources()
         {
             _logger.LogInformation("Вызвана очистка ресурсов");
-            foreach (var viewModel in SingleConnectionViewModels)
+            var SingleConnectionViewModelsCopy = new ObservableCollection<SingleConnectionViewModel>(SingleConnectionViewModels);
+            foreach (var viewModel in SingleConnectionViewModelsCopy)
             {
                 viewModel.CloseAction?.Invoke();
             }

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Client"
         mc:Ignorable="d"
-        Title="Окно клиента" Height="450" Width="800">
+        Title="Окно клиента" Height="600" Width="900">
     <Window.Resources>
         <local:StringToVisibilityConverter x:Key="stringToVisibilityConverter" />
         <local:BooleanToColorConverter x:Key="booleanToColorConverter" />
@@ -13,35 +13,54 @@
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="3*"/>
             <ColumnDefinition Width="3*"/>
             <ColumnDefinition Width="4*"/>
         </Grid.ColumnDefinitions>
         <Border Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,0">
             <StackPanel>
-                <TextBlock Style="{StaticResource TextBlockStyle}" Text="IP сервера"/>
-                <TextBox Style="{StaticResource TextBoxStyle}" Text="{Binding TcpClientService.ServerAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                <TextBlock Style="{StaticResource TextBlockStyle}" Text="Порт сервера"/>
-                <TextBox Style="{StaticResource TextBoxStyle}" Text="{Binding TcpClientService.ServerPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <Border  CornerRadius="4" Margin="10" BorderThickness="2" BorderBrush="Black" HorizontalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource TextBlockStyle}" Text="Мой ip и порт:"/>
+                        <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding TcpClientService.ClientAddress}"/>
+                        <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding TcpClientService.ClientPort}"/>
+                    </StackPanel>
+                </Border>
+                <Border  CornerRadius="4" Margin="10" BorderThickness="2" BorderBrush="Black" HorizontalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource TextBlockStyle}" Text="IP сервера"/>
+                        <TextBox Style="{StaticResource TextBoxStyle}" Text="{Binding TcpClientService.ServerAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBlock Style="{StaticResource TextBlockStyle}" Text="Порт сервера"/>
+                        <TextBox Style="{StaticResource TextBoxStyle}" Text="{Binding TcpClientService.ServerPort, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </Border>
                 <Button Command="{Binding StartClientCommand}" Margin="10" FontSize="14" Content="Подключиться" Style="{StaticResource PrimaryButtonStyle}"/>
                 <Button Command="{Binding StopClientCommand}" Margin="10" FontSize="14" Content="Отключиться" Style="{StaticResource PrimaryButtonStyle}"/>
                 <Button Command="{Binding RequestResendCommand}" Margin="10" FontSize="14" Content="Повторный запрос" Style="{StaticResource PrimaryButtonStyle}"/>
                 <Button Command="{Binding OpenAllMessagesCommand}" Margin="10" FontSize="14" Content="Все сообщения" Style="{StaticResource PrimaryButtonStyle}"/>
+
+
+
             </StackPanel>
         </Border>
 
         <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="0,0,1,0">
             <StackPanel Grid.Column="2">
-                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="Статус"/>
-                    <TextBlock Text="{Binding TcpClientService.ConnectionStatus}" HorizontalAlignment="Center" Margin="10" FontSize="14"/>
-                    <Ellipse Width="10" Height="10" Margin="5,0,0,0"
+                <Border CornerRadius="4" Padding="10,0,10,0" Margin="10" BorderThickness="2" BorderBrush="Black" HorizontalAlignment="Center">
+                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource TextBlockStyle}" Text="Статус"/>
+                        <TextBlock Text="{Binding TcpClientService.ConnectionStatus}" HorizontalAlignment="Center" Margin="10" FontSize="14"/>
+                        <Ellipse Width="10" Height="10" Margin="5,0,0,0"
                         Fill="{Binding TcpClientService.IsConnected, Converter={StaticResource booleanToColorConverter}}" />
-                </StackPanel>
-                <StackPanel Visibility="{Binding TcpClientService.ErrorMessage, Converter={StaticResource stringToVisibilityConverter}}">
-                    <TextBlock Margin="10" Style="{StaticResource TextBlockStyle}" Text="Сообщение об ошибке"/>
-                    <TextBox MinWidth="200" Margin="10" Text="{Binding TcpClientService.ErrorMessage}" HorizontalAlignment="Center" TextWrapping="Wrap" IsReadOnly="True" FontSize="14" VerticalScrollBarVisibility="Auto" AcceptsReturn="True"/>
-                </StackPanel>
+                    </StackPanel>
+                </Border>
+                <Border CornerRadius="4" Visibility="{Binding TcpClientService.ErrorMessage, Converter={StaticResource stringToVisibilityConverter}}" Padding="10,0,10,0" Margin="10" BorderThickness="2" BorderBrush="Black" HorizontalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Margin="10" Style="{StaticResource TextBlockStyle}" Text="Сообщение об ошибке"/>
+                        <TextBox MinWidth="200" Margin="10" Text="{Binding TcpClientService.ErrorMessage}" HorizontalAlignment="Center" TextWrapping="Wrap" IsReadOnly="True" FontSize="14" VerticalScrollBarVisibility="Auto" AcceptsReturn="True"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </Border>
 

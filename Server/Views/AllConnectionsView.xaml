@@ -31,9 +31,6 @@
                                 <TextBlock Text="{Binding TCPServerService.ServerAddress}" />
                                 <TextBlock Text=":" />
                                 <TextBlock Text="{Binding TCPServerService.ServerPort}" Margin="0,0,10,0" />
-                                <TextBlock Text="{Binding TCPServerService.ClientAddress}" Margin="10,0,0,0" />
-                                <TextBlock Text=":" />
-                                <TextBlock Text="{Binding TCPServerService.ClientPort}" />
                             </StackPanel>
                         </Border>
                     </DataTemplate>

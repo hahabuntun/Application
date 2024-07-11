@@ -51,12 +51,6 @@
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.ServerPort}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="Клиент: "/>
-                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.ClientAddress}"/>
-                    <TextBlock Style="{StaticResource TextBlockStyle}" Text=":"/>
-                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.ClientPort}"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="Id: "/>
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.Id}"/>
                 </StackPanel>

@@ -40,7 +40,7 @@ namespace Server.ViewModels
             CloseSelfCommand = new RelayCommand(param => CloseSelf());
             StopServerCommand = new RelayCommand(param => StopServer(), (param) => !_tcpServerService.IsServerStopped);
             StartServerCommand = new RelayCommand(param =>  StartServer(), (param) => _tcpServerService.IsServerStopped);
-            OpenFileCommand = new RelayCommand(param => OpenFile(), (param) => ((_tcpServerService.IsClientConnected) && (_tcpServerService.Message == null)));
+            OpenFileCommand = new RelayCommand(param => OpenFile(), (param) => ((_tcpServerService.Clients.Count > 0) && (_tcpServerService.Message == null)));
             OpenAllMessagesCommand = new RelayCommand(param => OpenAllMessages(), (param) => true);
         }
 
@@ -187,6 +187,7 @@ namespace Server.ViewModels
                     };
                     TCPServerService.Message = fileData; //обновляем сообщение на сервере
                     TCPServerService.MessageFilled?.Cancel();
+                    TCPServerService.OnMessageSent(TCPServerService.Clients);
                 }
             }
             catch (Exception ex)
