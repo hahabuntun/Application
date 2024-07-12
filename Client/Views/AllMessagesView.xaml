@@ -49,7 +49,7 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="Text: "/>
-                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.Text}"/>
+                    <TextBlock Background="{Binding SelectedMessage.Color}" Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.Text}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="From: "/>

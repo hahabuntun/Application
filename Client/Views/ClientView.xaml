@@ -10,6 +10,7 @@
         <local:StringToVisibilityConverter x:Key="stringToVisibilityConverter" />
         <local:BooleanToColorConverter x:Key="booleanToColorConverter" />
         <local:BooleanToVisibilityConverter x:Key="booleanToVisibilityConverter" />
+        <local:IPAddressConverter x:Key="ipAddressConverter" />
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
@@ -23,8 +24,9 @@
                 <Border  CornerRadius="4" Margin="10" BorderThickness="2" BorderBrush="Black" HorizontalAlignment="Center">
                     <StackPanel>
                         <TextBlock Style="{StaticResource TextBlockStyle}" Text="Мой ip и порт:"/>
-                        <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding TcpClientService.ClientAddress}"/>
-                        <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding TcpClientService.ClientPort}"/>
+                        <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding TcpClientService.ClientAddress, Converter={StaticResource ipAddressConverter}}"/>
+                        <TextBlock Visibility="{Binding TcpClientService.ClientPort, Converter={StaticResource booleanToVisibilityConverter}}"
+                            Style="{StaticResource TextBlockStyle}" Text="{Binding TcpClientService.ClientPort}"/>
                     </StackPanel>
                 </Border>
                 <Border  CornerRadius="4" Margin="10" BorderThickness="2" BorderBrush="Black" HorizontalAlignment="Center">

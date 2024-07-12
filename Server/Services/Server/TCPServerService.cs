@@ -274,6 +274,12 @@ namespace Server.Services.Server
                         lock (_countLock)
                         {
                             ClientsCount = ClientsCount - 1;
+                            if (ClientsCount == 0)
+                            {
+                                Message = null;
+                                MessageFilled = new CancellationTokenSource();
+                            }
+                                
                         }
                     }
                     else
@@ -283,6 +289,11 @@ namespace Server.Services.Server
                             lock (_countLock)
                             {
                                 ClientsCount = ClientsCount - 1;
+                                if (ClientsCount == 0)
+                                {
+                                    Message = null;
+                                    MessageFilled = new CancellationTokenSource();
+                                }
                             }
                         });
                     }

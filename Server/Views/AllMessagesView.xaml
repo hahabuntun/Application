@@ -10,6 +10,7 @@
         <local:StringToVisibilityConverter x:Key="stringToVisibilityConverter" />
         <local:BooleanToColorConverter x:Key="booleanToColorConverter" />
         <local:BooleanToVisibilityConverter x:Key="booleanToVisibilityConverter" />
+        <local:TcpClientToAddressPortConverter x:Key="tcpClientToAddressPortConverter" />
     </Window.Resources>
     <Grid>
         <!-- Основное содержимое -->
@@ -51,12 +52,26 @@
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.ServerPort}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="Получатели: "/>
+                    <ListBox x:Name="AddressComboBox"
+                       ItemsSource="{Binding SelectedMessage.Clients}"
+                       Margin="10"
+                       Width="200">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding ., Converter={StaticResource tcpClientToAddressPortConverter}}" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+                
+                <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="Id: "/>
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.Id}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="Text: "/>
-                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.Text}"/>
+                    <TextBlock Background="{Binding SelectedMessage.Color}"  Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.Text}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="From: "/>

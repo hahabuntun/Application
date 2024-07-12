@@ -1,10 +1,13 @@
-﻿namespace Server.Models
+﻿using System.Net.Sockets;
+
+namespace Server.Models
 {
     /// <summary>
     /// Данные, отображаемые на окне всех сообщений сессии с клиентом
     /// </summary>
     public class StoredMessage
     {
+        public List<TcpClient> Clients { get; set; }
         public string ServerAddress { get; set; }
         public int ServerPort { get; set; }
         public string ClientAddress { get; set; }

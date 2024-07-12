@@ -178,7 +178,8 @@ namespace Client.Services.Client
                 From = from,
                 Text = text,
                 Color = color,
-                ImagePath = imagePath
+                ImagePath = imagePath,
+                Time = DateTime.Now,
             };
             return mes;
         }
