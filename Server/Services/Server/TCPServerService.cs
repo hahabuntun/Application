@@ -45,7 +45,7 @@ namespace Server.Services.Server
         private int _clientsCount;
         public int ClientsCount { get => _clientsCount; set { _clientsCount = value; OnPropertyChanged(); } }
 
-        public event Action<Message, ObservableCollection<TcpClient>> messageSent;
+        public event Action<Message, TcpClient> messageSent;
         public CancellationTokenSource MessageFilled { get; set; }
 
 
@@ -61,9 +61,9 @@ namespace Server.Services.Server
         /// <summary>
         /// Вызывается при отсылке сообщения, чтобы обновить окно всех сообщений
         /// </summary>
-        public void OnMessageSent(ObservableCollection<TcpClient> clients)
+        public void OnMessageSent(TcpClient client)
         {
-            messageSent?.Invoke(Message, clients);
+            messageSent?.Invoke(Message, client);
         }
         /// <summary>
         /// Формирует список доступных ip для сервера
@@ -224,6 +224,7 @@ namespace Server.Services.Server
 
                     _logger.LogInformation("Отправляем данные клиенту");
                     await SendMessageAsync(stream, Message, cancellationToken); //Отправляем обработанные данные клиенту
+                    OnMessageSent(client);
                     _logger.LogInformation("Данные были отправлены");
                     _logger.LogInformation("Оповещаем подписчиков об отправке сообщения");
 
@@ -238,7 +239,7 @@ namespace Server.Services.Server
                             await SendMessageAsync(stream, Message, cancellationToken); //отправляем ему сообщение повторно
                             _logger.LogInformation("Данные были отправлены");
                             _logger.LogInformation("Оповещаем подписчиков об отправке сообщения");
-                            OnMessageSent(new ObservableCollection<TcpClient>() { client });
+                            OnMessageSent(client);
                         }
                         else if (clientRequest == "disconnect") //если клиент отправил запрос disconnect
                         {

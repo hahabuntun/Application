@@ -7,7 +7,7 @@ namespace Server.Models
     /// </summary>
     public class StoredMessage
     {
-        public List<TcpClient> Clients { get; set; }
+        public TcpClient Client { get; set; }
         public string ServerAddress { get; set; }
         public int ServerPort { get; set; }
         public string ClientAddress { get; set; }
@@ -17,6 +17,7 @@ namespace Server.Models
         public string From { get; set; }
         public string To { get; set; }
         public string FormatVersion { get; set; }
+        public DateTime Time { get; set; }
         public string Color { get; set; }
         public string ImagePath { get; set; }
     }

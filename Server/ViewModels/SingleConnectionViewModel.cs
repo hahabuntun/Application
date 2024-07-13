@@ -187,7 +187,6 @@ namespace Server.ViewModels
                     };
                     TCPServerService.Message = fileData; //обновляем сообщение на сервере
                     TCPServerService.MessageFilled?.Cancel();
-                    TCPServerService.OnMessageSent(TCPServerService.Clients);
                 }
             }
             catch (Exception ex)

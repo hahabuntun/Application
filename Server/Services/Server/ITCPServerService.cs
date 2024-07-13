@@ -10,10 +10,10 @@ namespace Server.Services.Server
         public string ServerAddress { get; set; }
         public int ServerPort { get; set; }
         public string ErrorMessage { get; set; }
-        public event Action<Message, ObservableCollection<TcpClient>> messageSent;
+        public event Action<Message, TcpClient> messageSent;
         public ObservableCollection<TcpClient> Clients { get; set; }
         public int ClientsCount { get; set; }
-        public void OnMessageSent(ObservableCollection<TcpClient> clients);
+        public void OnMessageSent(TcpClient client);
         public bool IsServerStopped { get; set; }
         public CancellationTokenSource MessageFilled { get; set; }
         Task StartServerAsync(CancellationToken cancellationToken);

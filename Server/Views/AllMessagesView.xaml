@@ -28,13 +28,14 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="5" Padding="5" Margin="5">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding ServerAddress}" />
-                                        <TextBlock Text=":" />
-                                        <TextBlock Text="{Binding ServerPort}" Margin="0,0,10,0" />
-                                        <TextBlock Text="{Binding ClientAddress}" Margin="10,0,0,0" />
-                                        <TextBlock Text=":" />
-                                        <TextBlock Text="{Binding ClientPort}" />
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding ServerAddress}" />
+                                            <TextBlock Text=":" />
+                                            <TextBlock Text="{Binding ServerPort}" Margin="0,0,10,0" />
+                                            <TextBlock Text="{Binding Client, Converter={StaticResource tcpClientToAddressPortConverter}}" />
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Text}"/>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
@@ -52,19 +53,13 @@
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.ServerPort}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="Получатели: "/>
-                    <ListBox x:Name="AddressComboBox"
-                       ItemsSource="{Binding SelectedMessage.Clients}"
-                       Margin="10"
-                       Width="200">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding ., Converter={StaticResource tcpClientToAddressPortConverter}}" />
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="Получатель: "/>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.Client, Converter={StaticResource tcpClientToAddressPortConverter}}" />
                 </StackPanel>
-                
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="Время отправки: "/>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.Time}"/>
+                </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="Id: "/>
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.Id}"/>

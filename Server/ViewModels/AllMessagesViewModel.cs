@@ -37,15 +37,15 @@ namespace Server.ViewModels
         /// Добавление сообщения
         /// </summary>
         /// <param name="message"></param>
-        public void AddMessage(Message message, ObservableCollection<TcpClient> clients)
+        public void AddMessage(Message message, TcpClient client)
         {
             _logger.LogInformation("Вызвана функция добавления сообщения в список всех сообщений");
-            List<TcpClient> tcpClients = new List<TcpClient>(clients);
             StoredMessage mes = new StoredMessage()
             {
-                Clients = tcpClients,
+                Client = client,
                 ServerAddress = TCPServerService.ServerAddress,
                 ServerPort = TCPServerService.ServerPort,
+                Time=DateTime.Now,
                 Id = message.Id,
                 FormatVersion = message.FormatVersion,
                 From = message.From,
