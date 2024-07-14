@@ -4,9 +4,13 @@ using Server.Commands;
 using Server.Models;
 using Server.Services;
 using Server.Services.Server;
+using System.Diagnostics;
 using System.IO;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Xml;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Server.ViewModels
 {
@@ -102,7 +106,7 @@ namespace Server.ViewModels
 
                 if (openFileDialog.ShowDialog() == true)
                 {
-                    Task.Run(() => ParseFile(openFileDialog.FileName)); //парсим файл
+                    Task.Run(() => ParseXmlFile(openFileDialog.FileName)); //парсим файл
                 }
             }
             catch (Exception ex)
@@ -194,6 +198,174 @@ namespace Server.ViewModels
                 TCPServerService.ErrorMessage = ex.Message;
                 _logger.LogWarning(ex.Message);
 
+            }
+        }
+
+
+        public async Task ParseXmlFile(string filePath)
+        {
+            try
+            {
+                _tcpServerService.ErrorMessage = "";
+                Message fileData = null;
+                // Load the XML document from file
+                XmlDocument doc = new XmlDocument();
+                doc.Load(filePath);
+
+                // Get the root element
+                XmlElement root = doc.DocumentElement;
+                if (root == null)
+                {
+                    _logger.LogWarning("No root element found in XML.");
+                    return;
+                }
+
+                // Get the first Message element
+                XmlNodeList messageList = root.GetElementsByTagName("Message");
+                if (messageList.Count == 0)
+                {
+                    _logger.LogWarning("No Message elements found in XML.");
+                    return;
+                }
+
+                XmlElement messageElement = (XmlElement)messageList[0]; // Take the first message if there are multiple
+
+                // Extract attributes from Message element
+                string formatVersion = GetAttributeOrDefault(messageElement, "FormatVersion");
+                string from = GetAttributeOrDefault(messageElement, "from");
+                string to = GetAttributeOrDefault(messageElement, "to");
+
+                if (string.IsNullOrEmpty(formatVersion) || string.IsNullOrEmpty(from) || string.IsNullOrEmpty(to))
+                {
+                    _logger.LogWarning("Missing required attributes in Message element.");
+                    return;
+                }
+
+                // Extract msg element details
+                XmlNodeList msgList = messageElement.GetElementsByTagName("msg");
+                if (msgList.Count == 0)
+                {
+                    _logger.LogWarning("No msg element found in Message.");
+                    return;
+                }
+
+                XmlElement msgElement = (XmlElement)msgList[0]; // Assuming only one msg element
+
+                // Extract id attribute from msg
+                string idString = GetAttributeOrDefault(msgElement, "id");
+                if (string.IsNullOrEmpty(idString) || !int.TryParse(idString, out int id))
+                {
+                    _logger.LogWarning("Invalid or missing 'id' attribute in msg element.");
+                    return;
+                }
+
+                // Extract text element from msg
+                XmlNodeList textList = msgElement.GetElementsByTagName("text");
+                if (textList.Count == 0)
+                {
+                    _logger.LogWarning("No text element found in msg.");
+                    return;
+                }
+
+                XmlElement textElement = (XmlElement)textList[0]; // Assuming only one text element
+                string textValue = textElement.InnerText;
+                string textColor = GetAttributeOrDefault(textElement, "color");
+
+                if (string.IsNullOrEmpty(textColor))
+                {
+                    _logger.LogWarning("No 'color' attribute found in text element.");
+                    return;
+                }
+                if (!textColor.StartsWith("#"))
+                {
+                    textColor = "#" + textColor; // Add '#' prefix if missing
+                }
+
+                if (string.IsNullOrEmpty(textValue))
+                {
+                    _logger.LogWarning("No text content found in text element.");
+                    return;
+                }
+
+                // Extract image element from msg
+                XmlNodeList imageList = msgElement.GetElementsByTagName("image");
+                if (imageList.Count == 0)
+                {
+                    _logger.LogWarning("No image element found in msg.");
+                    return;
+                }
+
+                XmlElement imageElement = (XmlElement)imageList[0]; // Assuming only one image element
+                string imageData = imageElement.InnerText;
+
+                if (string.IsNullOrEmpty(imageData))
+                {
+                    _logger.LogWarning("No image data found in image element.");
+                    return;
+                }
+
+                // Save image data to disk and get its path
+                byte[] imageBytes = Convert.FromBase64String(imageData);
+                string imagePath = await SaveImageToFileAsync(imageBytes);
+
+                if (string.IsNullOrEmpty(imagePath))
+                {
+                    _logger.LogWarning("Failed to save image to disk.");
+                    return;
+                }
+                fileData = new Message()
+                {
+                    Id = id,
+                    FormatVersion = formatVersion,
+                    From = from,
+                    To = to,
+                    Color = textColor,
+                    Text = textValue,
+                    ImagePath = imagePath,
+                    ImageBytes = imageBytes
+                };
+                TCPServerService.Message = fileData; //обновляем сообщение на сервере
+                TCPServerService.MessageFilled?.Cancel();
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error parsing XML file: {ex.Message}");
+            }
+        }
+
+        private string GetAttributeOrDefault(XmlElement element, string attributeName)
+        {
+            return element.HasAttribute(attributeName) ? element.GetAttribute(attributeName) : null;
+        }
+
+        private async Task<string> SaveImageToFileAsync(byte[] imageBytes)
+        {
+            try
+            {
+                // Generate unique file name
+                string fileName = $"image_{DateTime.Now:yyyyMMddHHmmssfff}.jpg";
+
+                // Set the directory path where you want to save the image
+                string directoryPath = "C:/images"; // Replace with your directory path
+                if (!Directory.Exists(directoryPath))
+                {
+                    Directory.CreateDirectory(directoryPath);
+                }
+
+                // Combine directory path and file name
+                string filePath = Path.Combine(directoryPath, fileName);
+
+                // Write bytes to file
+                await File.WriteAllBytesAsync(filePath, imageBytes);
+
+                // Return the file path
+                return filePath;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving image to file: {ex.Message}");
+                return null;
             }
         }
     }

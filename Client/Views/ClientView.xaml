@@ -25,7 +25,7 @@
                     <StackPanel>
                         <TextBlock Style="{StaticResource TextBlockStyle}" Text="Мой ip и порт:"/>
                         <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding TcpClientService.ClientAddress, Converter={StaticResource ipAddressConverter}}"/>
-                        <TextBlock Visibility="{Binding TcpClientService.ClientPort, Converter={StaticResource booleanToVisibilityConverter}}"
+                        <TextBlock Visibility="{Binding TcpClientService.IsConnected, Converter={StaticResource booleanToVisibilityConverter}}"
                             Style="{StaticResource TextBlockStyle}" Text="{Binding TcpClientService.ClientPort}"/>
                     </StackPanel>
                 </Border>
