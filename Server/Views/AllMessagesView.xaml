@@ -33,7 +33,9 @@
                                             <TextBlock Text="{Binding ServerAddress}" />
                                             <TextBlock Text=":" />
                                             <TextBlock Text="{Binding ServerPort}" Margin="0,0,10,0" />
-                                            <TextBlock Text="{Binding Client, Converter={StaticResource tcpClientToAddressPortConverter}}" />
+                                            <TextBlock Text="{Binding ClientAddress}" />
+                                            <TextBlock Text=":" />
+                                            <TextBlock Text="{Binding ClientPort}" Margin="0,0,10,0" />
                                         </StackPanel>
                                         <TextBlock Text="{Binding Text}"/>
                                     </StackPanel>
@@ -54,7 +56,9 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="Получатель: "/>
-                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.Client, Converter={StaticResource tcpClientToAddressPortConverter}}" />
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.ClientAddress}"/>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text=":"/>
+                    <TextBlock Style="{StaticResource TextBlockStyle}" Text="{Binding SelectedMessage.ClientPort}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Style="{StaticResource TextBlockStyle}" Text="Время отправки: "/>

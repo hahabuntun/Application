@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Message>
-    <FormatVersion>1.0</FormatVersion>
-    <From>sender@example.com</From>
-    <To>receiver@example.com</To>
-    <Id>123</Id>
-    <Color>#FF5733</Color>
-    <Text>Hello, this is a test message.</Text>
-    <ImagePath>C:\Users\User-PC\Desktop\projects\Application\images\img3.jpg</ImagePath>
-</Message>
+<Root>
+    <Message FormatVersion="1.1" from="Alice" to="Bob">
+        <msg id="456">
+            <text color="#00FF00">Hey, Bob!</text>
+            <image>R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=</image> <!-- Base64 encoded image data for 1x1 transparent GIF -->
+        </msg>
+    </Message>
+</Root>

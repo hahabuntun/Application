@@ -2,6 +2,7 @@
 using Server.Models;
 using Server.Services.Server;
 using System.Collections.ObjectModel;
+using System.Net;
 using System.Net.Sockets;
 
 
@@ -40,9 +41,13 @@ namespace Server.ViewModels
         public void AddMessage(Message message, TcpClient client)
         {
             _logger.LogInformation("Вызвана функция добавления сообщения в список всех сообщений");
+            IPEndPoint? clientEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
+            var ClientAddress = clientEndPoint.Address.ToString();
+            var ClientPort = clientEndPoint.Port;
             StoredMessage mes = new StoredMessage()
             {
-                Client = client,
+                ClientAddress = ClientAddress,
+                ClientPort = ClientPort,
                 ServerAddress = TCPServerService.ServerAddress,
                 ServerPort = TCPServerService.ServerPort,
                 Time=DateTime.Now,
