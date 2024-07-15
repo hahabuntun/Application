@@ -32,13 +32,17 @@ namespace Client.Services.Client
         public string ConnectionStatus { get => _connectionStatus; set { _connectionStatus = value; OnPropertyChanged(); } }
         public string ErrorMessage { get => _errorMessage; set { _errorMessage = value; OnPropertyChanged(); } }
         public CancellationTokenSource ResendCancellationTokenSource { get; set; }
-       
-       
+        public event Action serverDisconnected;
+        public void OnServerDisconnected()
+        {
+            serverDisconnected?.Invoke();
+        }
+
+
         public TCPClientService(ILogger<TCPClientService> logger)
         {
             _logger = logger;
         }
-
 
         public event Action<Message> messageReceived;
         public void OnMessageReceived()
@@ -105,7 +109,7 @@ namespace Client.Services.Client
                                 string discString = await ReceiveDisconnectAsync(stream, linkedCancellationToken); 
                                 
                                 _logger.LogWarning("Сервер разорвал подключение");
-                                break;
+                                throw new ServerDisconnectedException();
                             }
                             //обработка исключения, когда сработал токен отмены по причине повторного запроса
                             catch (OperationCanceledException) when (resendToken.IsCancellationRequested)
@@ -133,6 +137,7 @@ namespace Client.Services.Client
             catch (ServerDisconnectedException)
             {
                 _logger.LogWarning("Сервер разорвал соединение");
+                OnServerDisconnected();
             }
             //другие исключения
             catch (Exception ex)

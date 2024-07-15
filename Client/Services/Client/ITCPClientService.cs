@@ -15,6 +15,8 @@ namespace Client.Services.Client
         public bool IsConnected { get; set; }
         public Message Message { get; set; }
         public event Action<Message> messageReceived;
+        public event Action serverDisconnected;
+        public void OnServerDisconnected();
 
         public string ConnectionStatus { get; set; }
         public string ErrorMessage { get; set; }

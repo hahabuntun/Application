@@ -1,4 +1,5 @@
 ﻿using Client.Commands;
+using Client.Models;
 using Client.Services;
 using Client.Services.Client;
 using Microsoft.Extensions.Logging;
@@ -32,6 +33,8 @@ namespace Client.ViewModels
             _allMessagesViewModel = viewModelLocatorService.AllMessagesViewModel;
             _tcpClientService = tcpClientService;
             _tcpClientService.messageReceived += _allMessagesViewModel.AddMessage; //добавляем подписчика к событию получения данных от сервера
+            _tcpClientService.messageReceived += MessageReceivedCallback;
+            _tcpClientService.serverDisconnected += ServerDisconnectedCallback;
             _allMessagesViewModel.TCPClientService = _tcpClientService;
             //инициализируем комманды
             StartClientCommand = new RelayCommand((param) => StartClient(), (param)=> _tcpClientService.IsConnected == false);
@@ -39,6 +42,7 @@ namespace Client.ViewModels
             RequestResendCommand = new RelayCommand((param) => RequestResend(), (param) => _tcpClientService.Message != null);
             OpenAllMessagesCommand = new RelayCommand((param) => OpenAllMessages(), (param) => true);
         }
+
 
 
         /// <summary>
@@ -50,6 +54,10 @@ namespace Client.ViewModels
             _tokenSource = new CancellationTokenSource();
             CancellationToken cancellationToken = _tokenSource.Token;
             Task.Run(() => _tcpClientService.StartClientAsync(cancellationToken), cancellationToken);
+            Thread.Sleep(100);
+            ((RelayCommand)StartClientCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)StopClientCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)RequestResendCommand).RaiseCanExecuteChanged();
         }
 
 
@@ -70,6 +78,10 @@ namespace Client.ViewModels
         {
             _logger.LogInformation("Вызвана команда остановки клиента");
             _tokenSource?.Cancel();
+            Thread.Sleep(100);
+            ((RelayCommand)StartClientCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)StopClientCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)RequestResendCommand).RaiseCanExecuteChanged();
         }
 
 
@@ -80,8 +92,31 @@ namespace Client.ViewModels
         {
             _logger.LogInformation("Вызвана команда повторной отправки");
             _tcpClientService.ResendCancellationTokenSource?.Cancel();
+            Thread.Sleep(100);
+            ((RelayCommand)StartClientCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)StopClientCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)RequestResendCommand).RaiseCanExecuteChanged();
         }
 
+        public void MessageReceivedCallback(Message message)
+        {
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                ((RelayCommand)StartClientCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)StopClientCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)RequestResendCommand).RaiseCanExecuteChanged();
+            });
+        }
+
+        public void ServerDisconnectedCallback()
+        {
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                ((RelayCommand)StartClientCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)StopClientCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)RequestResendCommand).RaiseCanExecuteChanged();
+            });
+        }
 
         /// <summary>
         /// Очищаем ресурсы
@@ -92,6 +127,8 @@ namespace Client.ViewModels
             _logger.LogInformation("Вызвана функция очищения ресурсов");
             _allMessagesViewModel?.CloseAction?.Invoke();
             StopClient();
+            _tcpClientService.messageReceived -= MessageReceivedCallback;
+            _tcpClientService.serverDisconnected -= ServerDisconnectedCallback;
         }
     }
 }

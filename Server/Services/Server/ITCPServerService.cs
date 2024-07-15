@@ -11,6 +11,10 @@ namespace Server.Services.Server
         public int ServerPort { get; set; }
         public string ErrorMessage { get; set; }
         public event Action<Message, TcpClient> messageSent;
+        public event Action ClientConnected;
+        public event Action ClientDisconnected;
+        public void OnClientConnected();
+        public void OnAllClientsDisconnected();
         public ObservableCollection<TcpClient> Clients { get; set; }
         public int ClientsCount { get; set; }
         public void OnMessageSent(TcpClient client);

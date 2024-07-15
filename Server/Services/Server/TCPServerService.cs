@@ -44,6 +44,16 @@ namespace Server.Services.Server
         private readonly object _countLock = new object();
         private int _clientsCount;
         public int ClientsCount { get => _clientsCount; set { _clientsCount = value; OnPropertyChanged(); } }
+        public event Action ClientConnected;
+        public event Action ClientDisconnected;
+        public void OnClientConnected()
+        {
+            ClientConnected?.Invoke();
+        }
+        public void OnAllClientsDisconnected()
+        {
+            ClientDisconnected?.Invoke();
+        }
 
         public event Action<Message, TcpClient> messageSent;
         public CancellationTokenSource MessageFilled { get; set; }
@@ -53,7 +63,7 @@ namespace Server.Services.Server
         public TCPServerService(ILogger<TCPServerService> logger)
         {
             _logger = logger;
-            random();
+            FIndAvailableAddresses();
         }
 
 
@@ -68,9 +78,9 @@ namespace Server.Services.Server
         /// <summary>
         /// Формирует список доступных ip для сервера
         /// </summary>
-        public void random()
+        public void FIndAvailableAddresses()
         {
-            _logger.LogInformation("Вызвана функция random(для плучения всех доступных адрессов");
+            _logger.LogInformation("Вызвана функция FIndAvailableAddresses(для плучения всех доступных адрессов");
             List<IPAddress> addresses = new List<IPAddress>();
 
             // 1. Get all network interfaces
@@ -103,7 +113,7 @@ namespace Server.Services.Server
             {
                 AvailableAddresses.Add(address.ToString());
             }
-            _logger.LogInformation("Функция random завершила работу");
+            _logger.LogInformation("Функция FIndAvailableAddresses завершила работу");
         }
         
 
@@ -156,6 +166,7 @@ namespace Server.Services.Server
                                 ClientsCount = ClientsCount + 1;
                             });
                         }
+                        OnClientConnected();
                         //await HandleClientAsync(client, cancellationToken); //обрабатываем клиента
                         Task.Run(() => HandleClientAsync(client, cancellationToken), cancellationToken); //обрабатываем клиента       
                     }
@@ -181,6 +192,7 @@ namespace Server.Services.Server
                 IsServerRunning = false;
                 Message = null;
                 _logger.LogInformation("Server stopped");
+                OnAllClientsDisconnected();
             }
         }
 
@@ -279,6 +291,7 @@ namespace Server.Services.Server
                             {
                                 Message = null;
                                 MessageFilled = new CancellationTokenSource();
+                                OnAllClientsDisconnected();
                             }
                                 
                         }
@@ -294,6 +307,7 @@ namespace Server.Services.Server
                                 {
                                     Message = null;
                                     MessageFilled = new CancellationTokenSource();
+                                    OnAllClientsDisconnected();
                                 }
                             }
                         });

@@ -6,6 +6,7 @@ using Server.Services;
 using Server.Services.Server;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Sockets;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -39,6 +40,8 @@ namespace Server.ViewModels
             _viewModelLocatorService = viewModelLocatorService;
             _allMessagesViewModel = _viewModelLocatorService.AllMessagesViewModel;
             _tcpServerService = tcpServerService;
+            _tcpServerService.ClientConnected += ClientConnectedCallback;
+            _tcpServerService.ClientDisconnected += AllClientsDisconnectedCallback;
             _allMessagesViewModel.TCPServerService = _tcpServerService;
             _tcpServerService.messageSent += _allMessagesViewModel.AddMessage;
             CloseSelfCommand = new RelayCommand(param => CloseSelf());
@@ -58,6 +61,10 @@ namespace Server.ViewModels
             _tokenSource = new CancellationTokenSource();
             CancellationToken cancellationToken = _tokenSource.Token;
             Task.Run(() => _tcpServerService.StartServerAsync(cancellationToken), cancellationToken);
+            Thread.Sleep(100);
+            ((RelayCommand)StopServerCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)StartServerCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)OpenFileCommand).RaiseCanExecuteChanged();
         }
 
 
@@ -68,6 +75,10 @@ namespace Server.ViewModels
         {
             _logger.LogInformation("Вызвана команда stop");
             _tokenSource?.Cancel();
+            Thread.Sleep(100);
+            ((RelayCommand)StopServerCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)StartServerCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)OpenFileCommand).RaiseCanExecuteChanged();
         }
 
 
@@ -89,6 +100,8 @@ namespace Server.ViewModels
             _logger.LogInformation("Очистка ресурсов");
             _allMessagesViewModel?.CloseAction?.Invoke();
             StopServer();
+            _tcpServerService.ClientConnected -= ClientConnectedCallback;
+            _tcpServerService.ClientDisconnected -= AllClientsDisconnectedCallback;
             Closing(this);
         }
 
@@ -108,10 +121,33 @@ namespace Server.ViewModels
                 {
                     Task.Run(() => ParseXmlFile(openFileDialog.FileName)); //парсим файл
                 }
+                ((RelayCommand)OpenFileCommand).RaiseCanExecuteChanged();
             }
             catch (Exception ex)
             {
+                _logger.LogInformation("ошибка в открытии файла");
+                TCPServerService.ErrorMessage = ex.Message;
             }
+        }
+
+        public void ClientConnectedCallback()
+        {
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                ((RelayCommand)StopServerCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)StartServerCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)OpenFileCommand).RaiseCanExecuteChanged();
+            });
+        }
+
+        public void AllClientsDisconnectedCallback() 
+        {
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                ((RelayCommand)StopServerCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)StartServerCommand).RaiseCanExecuteChanged();
+                ((RelayCommand)OpenFileCommand).RaiseCanExecuteChanged();
+            });
         }
 
 
